@@ -261,25 +261,27 @@ if st.button("Retrieve data"):
     
     stats_df = pd.DataFrame(stats_data)
     st.table(stats_df)
-    
-    # Highway type distribution
-    st.write("### Highway Type Distribution")
-    fig_highway = px.pie(
-        values=highway_counts.values,
-        names=highway_counts.index,
-        title="Highway Types"
-    )
-    st.plotly_chart(fig_highway)
-    
-    # Group distribution
-    st.write("### Group Distribution")
-    fig_groups = px.pie(
-        values=group_counts.values,
-        names=group_counts.index,
-        title="Groups",
-        color_discrete_sequence=px.colors.qualitative.Set1
-    )
-    st.plotly_chart(fig_groups)
+
+    plot1, plot2 = st.columns(2)
+    with plot1:
+        st.write("### Highway Type Distribution")
+        # Highway type distribution
+        fig_highway = px.pie(
+            values=highway_counts.values,
+            names=highway_counts.index,
+            # title="Highway Types"
+        )
+        st.plotly_chart(fig_highway)
+    with plot2:
+        # Group distribution
+        st.write("### Group Distribution")
+        fig_groups = px.pie(
+            values=group_counts.values,
+            names=group_counts.index,
+            # title="Groups",
+            color_discrete_sequence=px.colors.qualitative.Set1
+        )
+        st.plotly_chart(fig_groups)
 
 
     # Download options
