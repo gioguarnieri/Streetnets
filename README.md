@@ -33,7 +33,7 @@ The new City Statistics page allows you to:
 
 ## Data Source
 
-The application retrieves data from the [CoR GitHub repository](https://github.com/gioguarnieri/CoR/tree/main/Results/csv), which contains CSV files with street network data for various cities.
+The application retrieves data from OpenStreetMap and pre-calculated metrics from the [CoR GitHub repository](https://github.com/gioguarnieri/CoR/tree/main/Results/csv), related to a paper in writing.
 
 ## Libraries Used
 
