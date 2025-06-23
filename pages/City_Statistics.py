@@ -4,44 +4,215 @@ import geopandas as gpd
 import osmnx as ox
 import networkx as nx
 import plotly.express as px
+from streamlit_folium import st_folium
+import folium
 
-st.set_page_config(page_title="City Statistics", page_icon="📊")
+st.set_page_config(page_title="City Statistics", page_icon="📊", layout='wide')
 
 st.title("City Statistics")
-st.write("This page provides basic statistics for a selected city's street network.")
+st.write("This page provides basic statistics for a selected city's street network. Beware that the data is not updated in real-time, so it may not reflect the latest changes in the city's infrastructure and may take a long time to retrieve.")
 
 
-# City selection
-city_list_full = ["São Paulo", "Rio de Janeiro", "Atlanta", "Manhattan", "Barcelona", 
-                  "Madrid", "Buenos Aires", "London", "Beijing", "Paris", "Cardiff", 
-                  "Berlin", "Amsterdam", "São José dos Campos", "Los Angeles", 
-                  "Wichita", "Toulouse", "Salt Lake"]
-
-# Allow user to input a city name or select from the list
-input_method = st.radio("Select input method:", ["Choose from list", "Enter city name"])
 
 group1 = ['motorway', 'motorway_link', 'trunk', 'trunk_link']
 group2 = ['primary', 'primary_link', 'secondary', 'secondary_link', 'tertiary', 'tertiary_link']
 group3 = group1 + group2
-
-if input_method == "Choose from list":
-    city = st.selectbox("Select a city:", city_list_full)
+if ('location' not in st.session_state):
+    lat, lon = "-23.533773", "-46.625290"
 else:
-    input_method = st.radio("Select retrieve method:", ["Point", "Entire city", "City region", "From bounding box", "From polygon", "From XML"])
+    lat, lon = st.session_state.location.location[0], st.session_state.location.location[1]
 
-if city in city_list_full:
-    input_method = "Choose from list"
+c1, c2 = st.columns(2)
+with c1:
+    input_method = st.radio("Select retrieve method:", ["Point", "Geocoding", "From bounding box", "From polygon", "From XML"])
+    match input_method:
+        case "Point":
+            st.write("#### Point")
 
-if city:
-    # Load data for the selected city
-    if input_method == "Choose from list":
-        nodes, edges = st.session_state.dict_database[city]["Nodes"], st.session_state.dict_database[city]["Edges"]
-    else:
-        G = ox.graph_from_place(city, network_type='drive')
-        nodes, edges = ox.graph_to_gdfs(G)
-    
+            st.write("Click on the map to select a location or write below.")
+            
+            cc1, cc2 = st.columns(2)
+            with cc1:
+                lat = st.text_input("Latitude:", value=lat)
+                if ('location' in st.session_state):
+                    st.session_state.location.location[0] = lat
+            with cc2:
+                lon = st.text_input("Longitude:", value=lon)
+                if ('location' in st.session_state):
+                    st.session_state.location.location[1] = lon
+            st.session_state.center = [float(lat), float(lon)]
+            box_size = st.number_input("Box size (in meters):", min_value=1, max_value=10000, value=1000, step=100)
+
+
+with c2:
+    match input_method:
+        case "Point":
+            st.write("### Type ")
+            # State variables
+            
+            if ('center' not in st.session_state):
+                st.session_state.center = lat, lon
+            if 'zoom' not in st.session_state:
+                st.session_state.zoom = 10
+
+            if ('location' not in st.session_state):
+                st.session_state.location = folium.Marker(st.session_state.center)
+
+            # Map creation
+            m = folium.Map(location=st.session_state.center, zoom_start=st.session_state.zoom)
+            fg = folium.FeatureGroup(name="Markers")
+            fg.add_child(st.session_state.location)
+
+            kw = {
+                "color": "blue",
+                "line_cap": "round",
+                "fill": True,
+                "fill_color": "red",
+                "weight": 5,
+            }
+            bbox = ox.utils_geo.bbox_from_point(
+                point=(float(lat), float(lon)),
+                dist=box_size,
+                # project_utm=True,
+            )
+            bbox = ox.utils_geo.bbox_to_poly(bbox).exterior.coords.xy
+            folium.Rectangle(
+                bounds=[[bbox[1][0], bbox[0][0]], [bbox[1][2], bbox[0][2]]],
+                line_join="round",
+                dash_array="5, 5",
+                **kw,
+            ).add_to(m)
+
+            def callback():
+                map_state_change = st.session_state.folium_map
+                # When the user interacts with the map
+                # If the interaction includes a click
+                if map_state_change['last_clicked']:
+                    loc = map_state_change['last_clicked']
+                    st.session_state.location = folium.Marker([loc['lat'], loc['lng']])
+                    st.session_state.zoom = map_state_change['zoom']
+
+            map_state_change = st_folium(
+                m,
+                key="folium_map",
+                feature_group_to_add=fg,
+                height=400,
+                width='100%',
+                on_change=callback,
+                returned_objects=['last_clicked', 'zoom', 'bounds', 'center'],
+                )
+
+
+
+        case "Geocoding":
+            st.write("#### Enter a geocoding query")
+            city = st.text_input("Geocoding query:", "São Paulo")
+            latlon = ox.geocoder.geocode(city)
+            gdf = ox.geocoder.geocode_to_gdf(city)
+            
+            # Map creation
+            m = folium.Map(location=latlon, zoom_start=10)
+            fg = folium.FeatureGroup(name="Markers")
+            st.session_state.location = folium.Marker(latlon)
+            fg.add_child(st.session_state.location)
+            def callback():
+                map_state_change = st.session_state.folium_map
+                # When the user interacts with the map
+                # If the interaction includes a click
+                # print(map_state_change)
+                if map_state_change['last_clicked']:
+                    loc = map_state_change['last_clicked']
+                    st.session_state.location = folium.Marker([loc['lat'], loc['lng']])
+                    st.session_state.zoom = map_state_change['zoom']
+            gdf.explore(m=m, color='red', name='Geocoding Result', marker_kwds={'radius': 5})
+            map_state_change = st_folium(
+                m,
+                key="folium_map",
+                feature_group_to_add=fg,
+                height=400,
+                width='100%',
+                on_change=callback,
+                returned_objects=['last_clicked', 'zoom', 'bounds', 'center'],
+                )
+
+
+
+
+
+
+        case "From bounding box":
+            st.write("#### Enter bounding box coordinates")
+            bbox = st.text_input("Bounding box (min_lat, min_lon, max_lat, max_lon):", "-23.6,-46.7,-23.5,-46.6")
+            try:
+                bbox = [float(coord) for coord in bbox.split(",")]
+                if len(bbox) != 4:
+                    raise ValueError("Bounding box must have 4 coordinates.")   
+            except ValueError as e:
+                st.error(f"Invalid bounding box format: {e}")
+                bbox = None
+            if bbox:
+                # Create a bounding box polygon
+                bbox_poly = ox.utils_geo.bbox_to_poly(bbox)
+                
+                # Map creation
+                m = folium.Map(location=[(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], zoom_start=12)
+                fg = folium.FeatureGroup(name="Bounding Box")
+                fg.add_child(folium.Rectangle(bounds=[[bbox[0], bbox[1]], [bbox[2], bbox[3]]], color='blue', fill=True, fill_color='blue', fill_opacity=0.1))
+                st.session_state.location = folium.Marker([(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2])
+                fg.add_child(st.session_state.location)
+                
+                def callback():
+                    map_state_change = st.session_state.folium_map
+                    # When the user interacts with the map
+                    # If the interaction includes a click
+                    if map_state_change['last_clicked']:
+                        loc = map_state_change['last_clicked']
+                        st.session_state.location = folium.Marker([loc['lat'], loc['lng']])
+                        st.session_state.zoom = map_state_change['zoom']
+                
+                map_state_change = st_folium(
+                    m,
+                    key="folium_map",
+                    feature_group_to_add=fg,
+                    height=400,
+                    width='100%',
+                    on_change=callback,
+                    returned_objects=['last_clicked', 'zoom', 'bounds', 'center'],
+                )
+            
+
+if st.button("Retrieve data"):
+    match input_method:
+        case "Point":
+            G = ox.graph_from_point(
+                center_point=(float(lat), float(lon)),
+                dist=box_size,
+                network_type='drive',
+                simplify=True,
+                retain_all=True
+            )
+        case "Geocoding":
+            G = ox.graph_from_place(
+                city,
+                network_type='drive',
+                simplify=True,
+                retain_all=True
+            )
+        case "From bounding box":
+            G = ox.graph_from_bbox(
+                north=bbox[2],
+                south=bbox[0],
+                east=bbox[3],
+                west=bbox[1],
+                network_type='drive',
+                simplify=True,
+                retain_all=True
+            )
+
+    nodes, edges = ox.graph_to_gdfs(G)
+
     if nodes is not None and edges is not None:
-        st.write(f"## Statistics for {city}")
+        st.write(f"## Statistics for the graph retrieved")
         
         # Calculate basic statistics
         total_nodes = len(nodes)
@@ -201,28 +372,28 @@ if city:
     else:
         st.warning(f"No data available for {city}. Please select a different city.")
 
-       # Download options
+        # Download options
         st.write("### Download Data")
         
     @st.cache_data
     def convert_df_to_csv(df):
         return df.to_csv().encode('utf-8')
-        
-    csv_nodes = convert_df_to_csv(nodes.drop(columns=['geometry']))
-    csv_edges = convert_df_to_csv(edges.drop(columns=['geometry']))
+    
+# csv_nodes = convert_df_to_csv(nodes.drop(columns=['geometry']))
+# csv_edges = convert_df_to_csv(edges.drop(columns=['geometry']))
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.download_button(
-            label="Download Nodes Data",
-            data=csv_nodes,
-            file_name=f'{city}_nodes_stats.csv',
-            mime='text/csv',
-        )
-    with col2:
-        st.download_button(
-            label="Download Edges Data",
-            data=csv_edges,
-            file_name=f'{city}_edges_stats.csv',
-            mime='text/csv',
-        )
+# col1, col2 = st.columns(2)
+# with col1:
+#     st.download_button(
+#         label="Download Nodes Data",
+#         data=csv_nodes,
+#         file_name=f'{city}_nodes_stats.csv',
+#         mime='text/csv',
+#     )
+# with col2:
+#     st.download_button(
+#         label="Download Edges Data",
+#         data=csv_edges,
+#         file_name=f'{city}_edges_stats.csv',
+#         mime='text/csv',
+#     )

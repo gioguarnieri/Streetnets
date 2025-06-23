@@ -89,7 +89,7 @@ st.write(f'Group A: {sum(st.session_state.dict_database[city]["Edges"]["Groups"]
          ')
 
 
-column = st.selectbox("Select the desired column:", ["length", "Inverse SP", "Cost of return", "Edge Betweenness"])
+column = st.selectbox("Select the desired column:", ["length", "Edge Betweenness"])
 vmin = min(st.session_state.dict_database[city]["Edges"][column])
 vmax = max(st.session_state.dict_database[city]["Edges"][column])
 cmap=plt.cm.jet
