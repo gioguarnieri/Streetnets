@@ -6,6 +6,7 @@ import networkx as nx
 import plotly.express as px
 from streamlit_folium import st_folium
 import folium
+import streamlit_js_eval
 
 st.set_page_config(page_title="City Statistics", page_icon="📊", layout='wide')
 
@@ -24,7 +25,7 @@ else:
 
 c1, c2 = st.columns(2)
 with c1:
-    input_method = st.radio("Select retrieve method:", ["Point", "Geocoding", "From bounding box", "From polygon", "From XML"])
+    input_method = st.radio("Select retrieve method:", ["Point", "Geocoding", "From bounding box"])
     match input_method:
         case "Point":
             st.write("#### Point")
@@ -47,7 +48,7 @@ with c1:
 with c2:
     match input_method:
         case "Point":
-            st.write("### Type ")
+            st.write("### Map ")
             # State variables
             
             if ('center' not in st.session_state):
@@ -284,30 +285,50 @@ if st.button("Retrieve data"):
             color_discrete_sequence=px.colors.qualitative.Set1
         )
         st.plotly_chart(fig_groups)
-
-
+    @st.fragment
+    def interactive_map():
+        st.write("### Map of the Retrieved Data")
+        # Create a map with the retrieved data
+        m = edges.explore(
+            column='length',
+            cmap='viridis',
+            tooltip=['name', 'length', 'highway', 'Groups'],
+            m=folium.Map(location=st.session_state.center, zoom_start=12),
+            name='Street Segments'
+        )
+        # Add the nodes to the map
+        nodes.explore(
+            m=m,
+            color='red',
+            marker_kwds={'radius': 5, 'fill': True, 'fill_color': 'red', 'fill_opacity': 0.6},
+            name='Intersections'
+        )
+        st_folium(m, width="100%", height=500)
+        
+    interactive_map()
     # Download options
     st.write("### Download Data")
         
     @st.cache_data
     def convert_df_to_csv(df):
         return df.to_csv().encode('utf-8')
-    
-    csv_nodes = convert_df_to_csv(nodes.drop(columns=['geometry']))
-    csv_edges = convert_df_to_csv(edges.drop(columns=['geometry']))
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.download_button(
-            label="Download Nodes Data",
-            data=csv_nodes,
-            file_name=f'nodes_stats.csv',
-            mime='text/csv',
-        )
-    with col2:
-        st.download_button(
-            label="Download Edges Data",
-            data=csv_edges,
-            file_name=f'edges_stats.csv',
-            mime='text/csv',
-        )
+    @st.fragment
+    def download_data():
+        csv_nodes = convert_df_to_csv(nodes.drop(columns=['geometry']))
+        csv_edges = convert_df_to_csv(edges.drop(columns=['geometry']))
+        col1, col2 = st.columns(2)
+        with col1:
+            st.download_button(
+                label="Download Nodes Data",
+                data=csv_nodes,
+                file_name=f'nodes_stats.csv',
+                mime='text/csv',
+            )
+        with col2:
+            st.download_button(
+                label="Download Edges Data",
+                data=csv_edges,
+                file_name=f'edges_stats.csv',
+                mime='text/csv',
+            )
+    download_data()
