@@ -210,8 +210,10 @@ if st.button("Retrieve data"):
             )
 
     nodes, edges = ox.graph_to_gdfs(G)
-
+    
     if nodes is not None and edges is not None:
+        st.write("### Network Data Retrieved")
+        ### make a map with the retrieved data using edge dataframe
         st.write(f"## Statistics for the graph retrieved")
         
         # Calculate basic statistics
