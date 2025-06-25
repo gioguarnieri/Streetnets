@@ -10,7 +10,7 @@ from streamlit_folium import st_folium
 # Page configuration
 st.set_page_config(
     page_title="StreetNets - Make Street Network Data Accessible",
-    page_icon="🌐",
+    page_icon="🛣️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -359,12 +359,12 @@ def main():
             nav_page("Glossary", timeout_secs=3)
 
     # Hero Image
-    street_networks_img = load_image("backups/street-networks-grid.jpg")
-    if street_networks_img:
-        st.markdown('<div class="image-container">', unsafe_allow_html=True)
-        st.image(street_networks_img, caption="Street network visualizations of different cities", use_container_width=True)
-        st.markdown('<div class="badge">No Code Required</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    # street_networks_img = load_image("backups/street-networks-grid.jpg")
+    # if street_networks_img:
+    #     st.markdown('<div class="image-container">', unsafe_allow_html=True)
+    #     st.image(street_networks_img, caption="Street network visualizations of different cities", use_container_width=True)
+    #     st.markdown('<div class="badge">No Code Required</div>', unsafe_allow_html=True)
+    #     st.markdown('</div>', unsafe_allow_html=True)
     
     # Problem Statement Section
     st.markdown("""
@@ -471,7 +471,7 @@ def main():
     
         if isinstance(active_feature['image'], folium.Map):
             # Display Folium map
-            st_folium(active_feature['image'], width = '100%')
+            st_folium(active_feature['image'], width = '100%', height=1000)
         else:
             st.markdown('<div class="image-container">', unsafe_allow_html=True)
             st.image(feature_img, caption=active_feature['title'], use_container_width=True)
@@ -495,7 +495,7 @@ def main():
         <div style="text-align: center;">
             <div class="step-number">1</div>
             <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Select Your City</h3>
-            <p style="color: #6b7280;">Choose from our predefined list or enter any city name worldwide.</p>
+            <p style="color: #6b7280;">Choose from our predefined list or enter any city available at OSM.</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -540,7 +540,7 @@ def main():
     <div class="footer-section">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
-                <div style="width: 2rem; height: 2rem; background: #2563eb; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: white;">🌐</div>
+                <div style="width: 2rem; height: 2rem; background: #2563eb; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: white;">🛣️</div>
                 <span style="font-size: 1.5rem; font-weight: bold;">StreetNets</span>
             </div>
             <div style="text-align: right; color: #9ca3af;">
