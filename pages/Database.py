@@ -110,7 +110,7 @@ fig_groups = px.pie(
 )
 st.plotly_chart(fig_groups)
 st.markdown("## Maps")
-column = st.selectbox("Select the desired metric:", ["length", "Inverse SP", "Cost of return", "Edge Betweenness"])
+column = st.selectbox("Select the desired metric:", ["length", "Edge Betweenness"])
 vmin = min(st.session_state.dict_database[city]["Edges"][column])
 vmax = max(st.session_state.dict_database[city]["Edges"][column])
 cmap=plt.cm.jet

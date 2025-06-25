@@ -2,3 +2,5 @@ streetnets/
 __pycache__/
 .venv/
 cache/
+Database_generator/
+backups/

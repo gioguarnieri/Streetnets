@@ -8,7 +8,7 @@ from streamlit_folium import st_folium
 import folium
 import streamlit_js_eval
 
-st.set_page_config(page_title="City Statistics", page_icon="📊", layout='wide')
+st.set_page_config(page_title="Retrieve data", page_icon="📊", layout='wide')
 
 st.title("City Statistics")
 st.write("This page provides basic statistics for a selected city's street network. Beware that the data is not updated in real-time, so it may not reflect the latest changes in the city's infrastructure and may take a long time to retrieve.")
@@ -107,13 +107,14 @@ with c2:
 
         case "Geocoding":
             st.write("#### Enter a geocoding query")
-            city = st.text_input("Geocoding query:", "São Paulo")
+            city = st.text_input("Geocoding query:", "Caraguatatuba")
             latlon = ox.geocoder.geocode(city)
             gdf = ox.geocoder.geocode_to_gdf(city)
             
             # Map creation
             m = folium.Map(location=latlon, zoom_start=10)
             fg = folium.FeatureGroup(name="Markers")
+            st.session_state.cecnter = latlon
             st.session_state.location = folium.Marker(latlon)
             fg.add_child(st.session_state.location)
             def callback():
@@ -293,7 +294,6 @@ if st.button("Retrieve data"):
             column='length',
             cmap='viridis',
             tooltip=['name', 'length', 'highway', 'Groups'],
-            m=folium.Map(location=st.session_state.center, zoom_start=12),
             name='Street Segments'
         )
         # Add the nodes to the map
