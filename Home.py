@@ -5,6 +5,8 @@ from io import BytesIO
 from streamlit.components.v1 import html
 import folium
 from streamlit_folium import st_folium
+import os
+
 
 
 # Page configuration
@@ -321,16 +323,20 @@ def nav_page(page_name, timeout_secs=3):
 
 def main():
     # Header/Navigation
-    st.markdown("""
-    <div class="main-header">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <div class="nav-logo-icon">🛣️</div>
-                <div class="nav-logo-text">StreetNets</div>
+    logo_path = "logo.png"
+
+    try:
+        os.path.exists(logo_path)
+        
+        st.markdown(
+            f"""
+            <div style="text-align: center; margin-bottom: 10px;">
+                <img src="data:image/png;base64,{load_image(logo_path)}" width="180">
             </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True
+        )
+    except FileNotFoundError:
+        st.warning("Logo da ORBTY não encontrado.")
     
     # Hero Section
     st.markdown("""
