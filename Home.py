@@ -231,8 +231,8 @@ st.markdown("""
         background: white;
         border-radius: 1rem;
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-        padding: 2rem;
-        border: 1px solid #e5e7eb;
+        padding: 0;
+        border: 0px solid #e5e7eb;
         margin: 2rem 0;
     }
     
@@ -323,21 +323,24 @@ def nav_page(page_name, timeout_secs=3):
 
 def main():
     # Header/Navigation
-    logo_path = "logo.png"
+    logo_path = "./test.png"
+    col = st.columns(11)
+    for i in col:
+        if i == col[5]:  # Center column
+            with i:
+                try:
+                    os.path.exists(logo_path)
+                    st.markdown("""
+                                <style>h2 {text-align: center;}</style>
+                                """, unsafe_allow_html=True)
+                    st.image(logo_path, width=100)
+                except FileNotFoundError:
+                    st.warning("Logo StreetNets não encontrado.")
+        else:  # Center column
+            with i:
+                st.write(' ')
 
-    try:
-        os.path.exists(logo_path)
-        
-        st.markdown(
-            f"""
-            <div style="text-align: center; margin-bottom: 10px;">
-                <img src="data:image/png;base64,{load_image(logo_path)}" width="180">
-            </div>
-            """, unsafe_allow_html=True
-        )
-    except FileNotFoundError:
-        st.warning("Logo da ORBTY não encontrado.")
-    
+
     # Hero Section
     st.markdown("""
     <div class="hero-section">

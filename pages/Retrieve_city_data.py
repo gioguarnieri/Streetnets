@@ -7,8 +7,18 @@ import plotly.express as px
 from streamlit_folium import st_folium
 import folium
 import streamlit_js_eval
+from shapely.geometry import Polygon
 
 st.set_page_config(page_title="Retrieve data", page_icon="📊", layout='wide')
+
+st.markdown("""
+<style>
+    /* Hide Streamlit default elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
 
 st.title("City Statistics")
 st.write("This page provides basic statistics for a selected city's street network. Beware that the data is not updated in real-time, so it may not reflect the latest changes in the city's infrastructure and may take a long time to retrieve.")
@@ -25,7 +35,7 @@ else:
 
 c1, c2 = st.columns(2)
 with c1:
-    input_method = st.radio("Select retrieve method:", ["Point", "Geocoding", "From bounding box"])
+    input_method = st.radio("Select retrieve method:", ["Point", "Geocoding", "From bounding box", "Draw polygon"])
     match input_method:
         case "Point":
             st.write("#### Point")
@@ -46,6 +56,11 @@ with c1:
 
 
 with c2:
+    option = st.selectbox(
+    "What network type?",
+    ("all", "all_public", "bike", "drive", "drive_service", "walk"),
+    index=None,
+    placeholder="Select contact method...",)
     match input_method:
         case "Point":
             st.write("### Map ")
@@ -181,14 +196,55 @@ with c2:
                     on_change=callback,
                     returned_objects=['last_clicked', 'zoom', 'bounds', 'center'],
                 )
+        case "Draw polygon":
+            st.write("#### Draw a polygon on the map")
+            st.write("Click on the map to draw a polygon. Double-click to finish.")
+            # Initialize the map
+            m = folium.Map(location=st.session_state.center, zoom_start=10)
+            # Create a feature group for the polygon
+            fg = folium.FeatureGroup(name="Drawn Polygon")
+            # Add a draw control to the map
+            draw_control = folium.plugins.Draw(
+                draw_options={
+                    'polyline': False,
+                    'polygon': True,
+                    'rectangle': True,
+                    'circle': False,
+                    'marker': False,
+                },
+                edit_options={
+                    'edit': True,
+                    'remove': True
+                }
+            )
+            m.add_child(draw_control)
+            print(draw_control)
+            # Add a marker for the center point
+            st.session_state.location = folium.Marker(st.session_state.center)
+            fg.add_child(st.session_state.location)
+            def callback():
+                map_state_change = st.session_state.folium_map
+                # When the user interacts with the map
+                # If the interaction includes a click
+                if map_state_change['last_clicked']:
+                    loc = map_state_change['last_clicked']
+                    st.session_state.location = folium.Marker([loc['lat'], loc['lng']])
+                    st.session_state.zoom = map_state_change['zoom']
+            map_state_change = st_folium(
+                m,
+                key="folium_map",
+                feature_group_to_add=fg,
+                height=400,
+                width='100%',
+                on_change=callback,
+                returned_objects=['last_clicked', 'zoom', 'bounds', 'center', "all_drawings"],
+            )
+            # Add a callback to handle the drawn polygon
+            
             
 
 if st.button("Retrieve data"):
-    option = st.selectbox(
-    "What network type?",
-    ("all", "all_public", "bike", "drive", "drive_service", "walk"),
-    index=None,
-    placeholder="Select contact method...",)
+
     match input_method:
         case "Point":
             G = ox.graph_from_point(
@@ -213,6 +269,31 @@ if st.button("Retrieve data"):
                 south=bbox[0],
                 east=bbox[3],
                 west=bbox[1],
+                network_type=option,
+                simplify=True,
+                retain_all=True,
+                truncate_by_edge=True
+            )
+        case "Draw polygon":
+            # Get the drawn polygon from the map
+            if map_state_change["all_drawings"]:
+                geojson_data = map_state_change["all_drawings"][0]
+                
+            # Check if it's a polygon
+            if geojson_data["geometry"]["type"] == "Polygon":
+                # Extract coordinates
+                coordinates = geojson_data["geometry"]["coordinates"][0]  # First ring
+            coords = []
+            for cols in coordinates:
+                print(cols)
+                coords.append((float(cols[0]), float(cols[1])))
+            p = Polygon(coords)
+            # Convert the drawn polygon to a GeoDataFrame
+            # gdf_polygon = gpd.GeoDataFrame(geometry=coordinates)
+            # Get the bounding box of the polygon
+            # bbox = gdf_polygon.total_bounds
+            G = ox.graph_from_polygon(
+                polygon=p,
                 network_type=option,
                 simplify=True,
                 retain_all=True,
