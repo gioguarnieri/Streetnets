@@ -184,21 +184,28 @@ with c2:
             
 
 if st.button("Retrieve data"):
+    option = st.selectbox(
+    "What network type?",
+    ("all", "all_public", "bike", "drive", "drive_service", "walk"),
+    index=None,
+    placeholder="Select contact method...",)
     match input_method:
         case "Point":
             G = ox.graph_from_point(
                 center_point=(float(lat), float(lon)),
                 dist=box_size,
-                network_type='drive',
+                network_type=option,
                 simplify=True,
-                retain_all=True
+                retain_all=True,
+                truncate_by_edge=True
             )
         case "Geocoding":
             G = ox.graph_from_place(
                 city,
-                network_type='drive',
+                network_type=option,
                 simplify=True,
-                retain_all=True
+                retain_all=True,
+                truncate_by_edge=True
             )
         case "From bounding box":
             G = ox.graph_from_bbox(
@@ -206,9 +213,10 @@ if st.button("Retrieve data"):
                 south=bbox[0],
                 east=bbox[3],
                 west=bbox[1],
-                network_type='drive',
+                network_type=option,
                 simplify=True,
-                retain_all=True
+                retain_all=True,
+                truncate_by_edge=True
             )
 
     nodes, edges = ox.graph_to_gdfs(G)
