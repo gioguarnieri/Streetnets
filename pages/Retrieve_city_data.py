@@ -59,8 +59,9 @@ with c2:
     option = st.selectbox(
     "What network type?",
     ("all", "all_public", "bike", "drive", "drive_service", "walk"),
-    index=None,
-    placeholder="Select contact method...",)
+    index=3,
+    placeholder="Select network type...",
+    )
     match input_method:
         case "Point":
             st.write("### Map ")
@@ -136,7 +137,6 @@ with c2:
                 map_state_change = st.session_state.folium_map
                 # When the user interacts with the map
                 # If the interaction includes a click
-                # print(map_state_change)
                 if map_state_change['last_clicked']:
                     loc = map_state_change['last_clicked']
                     st.session_state.location = folium.Marker([loc['lat'], loc['lng']])
@@ -218,7 +218,6 @@ with c2:
                 }
             )
             m.add_child(draw_control)
-            print(draw_control)
             # Add a marker for the center point
             st.session_state.location = folium.Marker(st.session_state.center)
             fg.add_child(st.session_state.location)
@@ -285,13 +284,8 @@ if st.button("Retrieve data"):
                 coordinates = geojson_data["geometry"]["coordinates"][0]  # First ring
             coords = []
             for cols in coordinates:
-                print(cols)
                 coords.append((float(cols[0]), float(cols[1])))
             p = Polygon(coords)
-            # Convert the drawn polygon to a GeoDataFrame
-            # gdf_polygon = gpd.GeoDataFrame(geometry=coordinates)
-            # Get the bounding box of the polygon
-            # bbox = gdf_polygon.total_bounds
             G = ox.graph_from_polygon(
                 polygon=p,
                 network_type=option,

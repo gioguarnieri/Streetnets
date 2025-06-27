@@ -43,14 +43,14 @@ with col2:
                             csv_zip.writestr(city_list_full[count]+ "_edges.csv", convert_df_to_csv(st.session_state.dict_database[city_list_full[count]]["Edges"]))
                         count+=1
                         
-                    with open("cities.zip", "rb") as file:
-                        st.download_button(
-                            label = "Download zip",
-                            data = file,
-                            file_name = "cities.zip",
-                            mime = 'application/zip'
+                    # with open("cities.zip", "rb") as file:
+                    #     st.download_button(
+                    #         label = "Download zip",
+                    #         data = file,
+                    #         file_name = "cities.zip",
+                    #         mime = 'application/zip'
                     
-                        )
+                    #     )
 
 #     csv_nodes = convert_df_to_csv(st.session_state.dict_database[city]["Nodes"].drop(columns=['geometry']))
 #     csv_edges = convert_df_to_csv(st.session_state.dict_database[city]["Edges"].drop(columns=['geometry']))
