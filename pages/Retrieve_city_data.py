@@ -397,8 +397,8 @@ if st.button("Retrieve data"):
         return df.to_csv().encode('utf-8')
     @st.fragment
     def download_data():
-        csv_nodes = convert_df_to_csv(nodes.drop(columns=['geometry']))
-        csv_edges = convert_df_to_csv(edges.drop(columns=['geometry']))
+        csv_nodes = convert_df_to_csv(nodes)
+        csv_edges = convert_df_to_csv(edges)
         col1, col2 = st.columns(2)
         with col1:
             st.download_button(
