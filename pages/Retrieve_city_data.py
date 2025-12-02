@@ -8,6 +8,10 @@ from streamlit_folium import st_folium
 import folium
 import streamlit_js_eval
 from shapely.geometry import Polygon
+import io
+import os
+import zipfile
+from tempfile import TemporaryDirectory
 
 st.set_page_config(page_title="Retrieve data", page_icon="📊", layout='wide')
 
@@ -57,7 +61,7 @@ with c1:
 
 with c2:
     option = st.selectbox(
-    "What network type?",
+    "Network type:",
     ("all", "all_public", "bike", "drive", "drive_service", "walk"),
     index=3,
     placeholder="Select network type...",
@@ -264,10 +268,7 @@ if st.button("Retrieve data"):
             )
         case "From bounding box":
             G = ox.graph_from_bbox(
-                north=bbox[2],
-                south=bbox[0],
-                east=bbox[3],
-                west=bbox[1],
+                bbox = (bbox[1], bbox[0], bbox[3], bbox[2]),
                 network_type=option,
                 simplify=True,
                 retain_all=True,
@@ -391,27 +392,57 @@ if st.button("Retrieve data"):
     interactive_map()
     # Download options
     st.write("### Download Data")
-        
-    @st.cache_data
-    def convert_df_to_csv(df):
-        return df.to_csv().encode('utf-8')
+    st.warning("The fileswill be downloaded as a zip containing multiple files.")
+
     @st.fragment
-    def download_data():
-        csv_nodes = convert_df_to_csv(nodes)
-        csv_edges = convert_df_to_csv(edges)
-        col1, col2 = st.columns(2)
-        with col1:
-            st.download_button(
-                label="Download Nodes Data",
-                data=csv_nodes,
-                file_name=f'nodes_stats.csv',
-                mime='text/csv',
-            )
-        with col2:
-            st.download_button(
-                label="Download Edges Data",
-                data=csv_edges,
-                file_name=f'edges_stats.csv',
-                mime='text/csv',
-            )
-    download_data()
+    def generate_files(_nodes, _edges):
+        option2 = "ESRI Shapefile"
+        option2 = st.selectbox(
+        "Download as:",
+        ( "ESRI Shapefile", "GeoJSON", "Parquet", "Feather", "GPKG", "SQLite", "CSV"),
+        index=0,
+        placeholder="Select file extension...",
+        )
+
+        if option2 == "ESRI Shapefile":
+            file_ext = "shp"
+        else:
+            file_ext = option2.lower()
+        # Generate files in memory
+
+
+        with TemporaryDirectory() as tmpdir:
+            nodes_path = os.path.join(tmpdir, 'nodes.'+file_ext)
+            edges_path = os.path.join(tmpdir, 'edges.'+file_ext)
+            if option2 == "CSV":
+                _nodes.to_csv(nodes_path, index=False)
+                _edges.to_csv(edges_path, index=False)
+            else:
+                _nodes.to_file(nodes_path, index=False)
+                _edges.to_file(edges_path, index=False)
+
+            # Create a zip file in memory
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w') as zf:
+                for foldername, subfolders, filenames in os.walk(tmpdir):
+                    for filename in filenames:
+                        file_path = os.path.join(foldername, filename)
+                        zf.write(file_path, os.path.relpath(file_path, tmpdir))
+            zip_buffer.seek(0)
+            file_nodes = zip_buffer.getvalue()
+            file_edges = zip_buffer.getvalue()
+
+        st.download_button(
+            label="Download Data",
+            data=file_nodes,
+            file_name=f'files.zip',
+            # mime='text/csv',
+        )
+        # with col2:
+            # st.download_button(
+            #     label="Download Edges Data",
+            #     data=file_edges,
+            #     file_name=f'edges_stats.zip',
+            #     # mime='text/csv',
+            # )
+    generate_files(nodes, edges)
