@@ -1,3 +1,4 @@
+from unittest import case
 import streamlit as st
 import pandas as pd
 import geopandas as gpd
@@ -39,7 +40,7 @@ else:
 
 c1, c2 = st.columns(2)
 with c1:
-    input_method = st.radio("Select retrieve method:", ["Point", "Geocoding", "From bounding box", "Draw polygon"])
+    input_method = st.radio("Select retrieve method:", ["Point", "Geocoding", "From bounding box", "Draw polygon", "Shapefile"], help = "Make sure the shapefile/polygon is in WGS84 (EPSG:4326) coordinate system for compatibility with OSMnx. The tool will attempt to reproject if a different CRS is detected.")
     match input_method:
         case "Point":
             st.write("#### Point")
@@ -57,6 +58,66 @@ with c1:
                     st.session_state.location.location[1] = lon
             st.session_state.center = [float(lat), float(lon)]
             box_size = st.number_input("Box size (in meters):", min_value=1, max_value=10000, value=1000, step=100)
+        case "Shapefile":
+            st.write("#### Upload Shapefile")
+            st.write("Upload a .zip file containing the .shp, .shx, and .dbf files.")
+            
+            uploaded_file = st.file_uploader("Choose a zip file", type="zip")
+            
+            if uploaded_file is not None:
+                # Create a temporary directory to extract the zip
+                with TemporaryDirectory() as tmpdir:
+                    # Save the uploaded zip file to the temp directory
+                    zip_path = os.path.join(tmpdir, "upload.zip")
+                    with open(zip_path, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+                    
+                    try:
+                        # Extract the zip file
+                        with zipfile.ZipFile(zip_path, "r") as zip_ref:
+                            zip_ref.extractall(tmpdir)
+                        
+                        # Recursively search for the .shp file
+                        shp_file_path = None
+                        for root, dirs, files in os.walk(tmpdir):
+                            for file in files:
+                                if file.endswith(".shp"):
+                                    shp_file_path = os.path.join(root, file)
+                                    break
+                            if shp_file_path:
+                                break
+                        
+                        if shp_file_path:
+                            # Read the shapefile using Geopandas
+                            gdf = gpd.read_file(shp_file_path)
+                            
+                            # Check and verify CRS (Coordinate Reference System)
+                            if gdf.crs is None:
+                                st.warning("Shapefile has no CRS defined. Assuming EPSG:4326 (Lat/Lon).")
+                                gdf.set_crs("EPSG:4326", inplace=True)
+                            else:
+                                # Reproject to EPSG:4326 for OSMnx compatibility
+                                gdf = gdf.to_crs("EPSG:4326")
+                            
+                            # Extract the Polygon (Handling multiple features by unionizing them)
+                            # This creates a single Polygon or MultiPolygon covering all features
+                            polygon_geom = gdf.geometry.unary_union
+                            
+                            # Save to session state for retrieval later
+                            st.session_state['shapefile_geometry'] = polygon_geom
+                            
+                            # Update the map center based on the shapefile centroid
+                            centroid = polygon_geom.centroid
+                            st.session_state.center = [centroid.y, centroid.x]
+                            st.session_state.zoom = 12
+                            
+                            st.success(f"Shapefile loaded successfully! Contains {len(gdf)} features.")
+                            
+                        else:
+                            st.error("Invalid Zip: No .shp file found inside.")
+                            
+                    except Exception as e:
+                        st.error(f"An error occurred while processing the file: {e}")
 
 
 with c2:
@@ -157,10 +218,6 @@ with c2:
                 )
 
 
-
-
-
-
         case "From bounding box":
             st.write("#### Enter bounding box coordinates")
             bbox = st.text_input("Bounding box (min_lat, min_lon, max_lat, max_lon):", "-23.6,-46.7,-23.5,-46.6")
@@ -243,6 +300,39 @@ with c2:
                 returned_objects=['last_clicked', 'zoom', 'bounds', 'center', "all_drawings"],
             )
             # Add a callback to handle the drawn polygon
+        case "Shapefile":
+            st.write("### Map Preview")
+            
+            # Initialize Map
+            m = folium.Map(location=st.session_state.center, zoom_start=st.session_state.zoom)
+            fg = folium.FeatureGroup(name="Uploaded Shapefile")
+            
+            # Check if geometry exists in session state (uploaded successfully)
+            if 'shapefile_geometry' in st.session_state:
+                # Add the polygon to the map
+                folium.GeoJson(
+                    st.session_state['shapefile_geometry'],
+                    style_function=lambda x: {'fillColor': 'blue', 'color': 'blue', 'weight': 2, 'fillOpacity': 0.3}
+                ).add_to(fg)
+                
+                # Add a marker for the center
+                folium.Marker(st.session_state.center, popup="Centroid").add_to(fg)
+                
+                # Fit bounds to the polygon
+                bounds = st.session_state['shapefile_geometry'].bounds # (minx, miny, maxx, maxy)
+                m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+            else:
+                st.info("Upload a .zip file on the left to see the map preview.")
+
+            # Render the map
+            st_folium(
+                m,
+                key="folium_map",
+                feature_group_to_add=fg,
+                height=400,
+                width='100%',
+                returned_objects=['last_clicked', 'zoom', 'bounds', 'center'],
+            )
             
             
 
@@ -294,7 +384,23 @@ if st.button("Retrieve data"):
                 retain_all=True,
                 truncate_by_edge=True
             )
-
+        case "Shapefile":
+            if 'shapefile_geometry' in st.session_state:
+                with st.spinner("Retrieving graph from shapefile polygon..."):
+                    try:
+                        G = ox.graph_from_polygon(
+                            polygon=st.session_state['shapefile_geometry'],
+                            network_type=option,
+                            simplify=True,
+                            retain_all=True,
+                            truncate_by_edge=True
+                        )
+                    except Exception as e:
+                        st.error(f"Error retrieving graph: {e}")
+                        st.stop()
+            else:
+                st.error("Please upload a valid shapefile first.")
+                st.stop()
     nodes, edges = ox.graph_to_gdfs(G)
     
     if nodes is not None and edges is not None:
