@@ -1,13 +1,11 @@
-from unittest import case
 import streamlit as st
 import pandas as pd
 import geopandas as gpd
 import osmnx as ox
-import networkx as nx
 import plotly.express as px
 from streamlit_folium import st_folium
 import folium
-import streamlit_js_eval
+from folium.plugins import Draw
 from shapely.geometry import Polygon
 import io
 import os
@@ -33,10 +31,24 @@ st.write("This page provides basic statistics for a selected city's street netwo
 group1 = ['motorway', 'motorway_link', 'trunk', 'trunk_link']
 group2 = ['primary', 'primary_link', 'secondary', 'secondary_link', 'tertiary', 'tertiary_link']
 group3 = group1 + group2
+
+if 'center' not in st.session_state:
+    st.session_state.center = [-23.533773, -46.625290]
+if 'zoom' not in st.session_state:
+    st.session_state.zoom = 10
+
 if ('location' not in st.session_state):
     lat, lon = "-23.533773", "-46.625290"
 else:
     lat, lon = st.session_state.location.location[0], st.session_state.location.location[1]
+
+def map_callback():
+    map_state_change = st.session_state.folium_map
+    # When the user interacts with the map, register the clicked location
+    if map_state_change['last_clicked']:
+        loc = map_state_change['last_clicked']
+        st.session_state.location = folium.Marker([loc['lat'], loc['lng']])
+        st.session_state.zoom = map_state_change['zoom']
 
 c1, c2 = st.columns(2)
 with c1:
@@ -131,12 +143,6 @@ with c2:
         case "Point":
             st.write("### Map ")
             # State variables
-            
-            if ('center' not in st.session_state):
-                st.session_state.center = lat, lon
-            if 'zoom' not in st.session_state:
-                st.session_state.zoom = 10
-
             if ('location' not in st.session_state):
                 st.session_state.location = folium.Marker(st.session_state.center)
 
@@ -165,22 +171,13 @@ with c2:
                 **kw,
             ).add_to(m)
 
-            def callback():
-                map_state_change = st.session_state.folium_map
-                # When the user interacts with the map
-                # If the interaction includes a click
-                if map_state_change['last_clicked']:
-                    loc = map_state_change['last_clicked']
-                    st.session_state.location = folium.Marker([loc['lat'], loc['lng']])
-                    st.session_state.zoom = map_state_change['zoom']
-
             map_state_change = st_folium(
                 m,
                 key="folium_map",
                 feature_group_to_add=fg,
                 height=400,
                 width='100%',
-                on_change=callback,
+                on_change=map_callback,
                 returned_objects=['last_clicked', 'zoom', 'bounds', 'center'],
                 )
 
@@ -191,21 +188,13 @@ with c2:
             city = st.text_input("Geocoding query:", "Caraguatatuba")
             latlon = ox.geocoder.geocode(city)
             gdf = ox.geocoder.geocode_to_gdf(city)
-            
+
             # Map creation
             m = folium.Map(location=latlon, zoom_start=10)
             fg = folium.FeatureGroup(name="Markers")
-            st.session_state.cecnter = latlon
+            st.session_state.center = latlon
             st.session_state.location = folium.Marker(latlon)
             fg.add_child(st.session_state.location)
-            def callback():
-                map_state_change = st.session_state.folium_map
-                # When the user interacts with the map
-                # If the interaction includes a click
-                if map_state_change['last_clicked']:
-                    loc = map_state_change['last_clicked']
-                    st.session_state.location = folium.Marker([loc['lat'], loc['lng']])
-                    st.session_state.zoom = map_state_change['zoom']
             gdf.explore(m=m, color='red', name='Geocoding Result', marker_kwds={'radius': 5})
             map_state_change = st_folium(
                 m,
@@ -213,48 +202,37 @@ with c2:
                 feature_group_to_add=fg,
                 height=400,
                 width='100%',
-                on_change=callback,
+                on_change=map_callback,
                 returned_objects=['last_clicked', 'zoom', 'bounds', 'center'],
                 )
 
 
         case "From bounding box":
             st.write("#### Enter bounding box coordinates")
-            bbox = st.text_input("Bounding box (min_lat, min_lon, max_lat, max_lon):", "-23.6,-46.7,-23.5,-46.6")
-            try:
-                bbox = [float(coord) for coord in bbox.split(",")]
-                if len(bbox) != 4:
-                    raise ValueError("Bounding box must have 4 coordinates.")   
-            except ValueError as e:
-                st.error(f"Invalid bounding box format: {e}")
+            bc1, bc2, bc3, bc4 = st.columns(4)
+            min_lat = bc1.number_input("Min latitude:", value=-23.6, format="%.6f", min_value=-90.0, max_value=90.0)
+            min_lon = bc2.number_input("Min longitude:", value=-46.7, format="%.6f", min_value=-180.0, max_value=180.0)
+            max_lat = bc3.number_input("Max latitude:", value=-23.5, format="%.6f", min_value=-90.0, max_value=90.0)
+            max_lon = bc4.number_input("Max longitude:", value=-46.6, format="%.6f", min_value=-180.0, max_value=180.0)
+            bbox = [min_lat, min_lon, max_lat, max_lon]
+            if min_lat >= max_lat or min_lon >= max_lon:
+                st.error("Min latitude/longitude must be smaller than max latitude/longitude.")
                 bbox = None
             if bbox:
-                # Create a bounding box polygon
-                bbox_poly = ox.utils_geo.bbox_to_poly(bbox)
-                
                 # Map creation
                 m = folium.Map(location=[(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], zoom_start=12)
                 fg = folium.FeatureGroup(name="Bounding Box")
                 fg.add_child(folium.Rectangle(bounds=[[bbox[0], bbox[1]], [bbox[2], bbox[3]]], color='blue', fill=True, fill_color='blue', fill_opacity=0.1))
                 st.session_state.location = folium.Marker([(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2])
                 fg.add_child(st.session_state.location)
-                
-                def callback():
-                    map_state_change = st.session_state.folium_map
-                    # When the user interacts with the map
-                    # If the interaction includes a click
-                    if map_state_change['last_clicked']:
-                        loc = map_state_change['last_clicked']
-                        st.session_state.location = folium.Marker([loc['lat'], loc['lng']])
-                        st.session_state.zoom = map_state_change['zoom']
-                
+
                 map_state_change = st_folium(
                     m,
                     key="folium_map",
                     feature_group_to_add=fg,
                     height=400,
                     width='100%',
-                    on_change=callback,
+                    on_change=map_callback,
                     returned_objects=['last_clicked', 'zoom', 'bounds', 'center'],
                 )
         case "Draw polygon":
@@ -265,7 +243,7 @@ with c2:
             # Create a feature group for the polygon
             fg = folium.FeatureGroup(name="Drawn Polygon")
             # Add a draw control to the map
-            draw_control = folium.plugins.Draw(
+            draw_control = Draw(
                 draw_options={
                     'polyline': False,
                     'polygon': True,
@@ -282,24 +260,15 @@ with c2:
             # Add a marker for the center point
             st.session_state.location = folium.Marker(st.session_state.center)
             fg.add_child(st.session_state.location)
-            def callback():
-                map_state_change = st.session_state.folium_map
-                # When the user interacts with the map
-                # If the interaction includes a click
-                if map_state_change['last_clicked']:
-                    loc = map_state_change['last_clicked']
-                    st.session_state.location = folium.Marker([loc['lat'], loc['lng']])
-                    st.session_state.zoom = map_state_change['zoom']
             map_state_change = st_folium(
                 m,
                 key="folium_map",
                 feature_group_to_add=fg,
                 height=400,
                 width='100%',
-                on_change=callback,
+                on_change=map_callback,
                 returned_objects=['last_clicked', 'zoom', 'bounds', 'center', "all_drawings"],
             )
-            # Add a callback to handle the drawn polygon
         case "Shapefile":
             st.write("### Map Preview")
             
@@ -357,6 +326,9 @@ if st.button("Retrieve data"):
                 truncate_by_edge=True
             )
         case "From bounding box":
+            if bbox is None:
+                st.error("Please enter a valid bounding box first.")
+                st.stop()
             G = ox.graph_from_bbox(
                 bbox = (bbox[1], bbox[0], bbox[3], bbox[2]),
                 network_type=option,
@@ -366,13 +338,14 @@ if st.button("Retrieve data"):
             )
         case "Draw polygon":
             # Get the drawn polygon from the map
-            if map_state_change["all_drawings"]:
-                geojson_data = map_state_change["all_drawings"][0]
-                
-            # Check if it's a polygon
-            if geojson_data["geometry"]["type"] == "Polygon":
-                # Extract coordinates
-                coordinates = geojson_data["geometry"]["coordinates"][0]  # First ring
+            if not map_state_change.get("all_drawings"):
+                st.error("Please draw a polygon on the map first.")
+                st.stop()
+            geojson_data = map_state_change["all_drawings"][0]
+            if geojson_data["geometry"]["type"] != "Polygon":
+                st.error("The drawn shape must be a polygon or rectangle.")
+                st.stop()
+            coordinates = geojson_data["geometry"]["coordinates"][0]  # First ring
             coords = []
             for cols in coordinates:
                 coords.append((float(cols[0]), float(cols[1])))
@@ -402,57 +375,46 @@ if st.button("Retrieve data"):
                 st.error("Please upload a valid shapefile first.")
                 st.stop()
     nodes, edges = ox.graph_to_gdfs(G)
-    
-    if nodes is not None and edges is not None:
-        st.write("### Network Data Retrieved")
-        ### make a map with the retrieved data using edge dataframe
-        st.write(f"## Statistics for the graph retrieved")
-        
-        # Calculate basic statistics
-        total_nodes = len(nodes)
-        total_edges = len(edges)
-        total_length = edges['length'].sum()
-        avg_length = edges['length'].mean()
-        
 
+    st.write("### Network Data Retrieved")
+    st.write(f"## Statistics for the graph retrieved")
 
-    
-        edges["highway"] = edges.highway.map(lambda x: x[0] if isinstance(x, list) else x)
+    # Calculate basic statistics
+    total_nodes = len(nodes)
+    total_edges = len(edges)
+    total_length = edges['length'].sum()
+    avg_length = edges['length'].mean()
 
-        edges["Groups"] = edges.highway
+    edges["highway"] = edges.highway.map(lambda x: x[0] if isinstance(x, list) else x)
+    edges["Groups"] = edges.highway.map(lambda x: 'A' if x in group1 else 'B' if x in group2 else 'C')
 
-        edges["Groups"] = edges.highway.map(lambda x: 'C' if x  not in group3 else x)
-        edges["Groups"] = edges.Groups.map(lambda x: 'A' if x  in group1 else x)
-        edges["Groups"] = edges.Groups.map(lambda x: 'B' if x  in group2 else x)
-        # Highway type distribution
-        highway_counts = edges['highway'].value_counts()
-        highway_percentages = (highway_counts / total_edges * 100).round(2)
-        
-        # Group distribution
-        group_counts = edges['Groups'].value_counts()
-        group_percentages = (group_counts / total_edges * 100).round(2)
-        stats_data = {
-            "Metric": [
-                "Total Nodes (Intersections)", 
-                "Total Edges (Street Segments)", 
-                "Total Street Length (m)",
-                "Average Street Segment Length (m)",
-                "Group A Percentage (%)",
-                "Group B Percentage (%)",
-                "Group C Percentage (%)",
-            ],
-            "Value": [
-                total_nodes,
-                total_edges,
-                f"{total_length:.2f}",
-                f"{avg_length:.2f}",
-                f"{group_percentages.get('A', 0):.2f}",
-                f"{group_percentages.get('B', 0):.2f}",
-                f"{group_percentages.get('C', 0):.2f}",
-            ]
-        }
+    # Highway type distribution
+    highway_counts = edges['highway'].value_counts()
 
-    
+    # Group distribution
+    group_counts = edges['Groups'].value_counts()
+    group_percentages = (group_counts / total_edges * 100).round(2)
+    stats_data = {
+        "Metric": [
+            "Total Nodes (Intersections)",
+            "Total Edges (Street Segments)",
+            "Total Street Length (m)",
+            "Average Street Segment Length (m)",
+            "Group A Percentage (%)",
+            "Group B Percentage (%)",
+            "Group C Percentage (%)",
+        ],
+        "Value": [
+            total_nodes,
+            total_edges,
+            f"{total_length:.2f}",
+            f"{avg_length:.2f}",
+            f"{group_percentages.get('A', 0):.2f}",
+            f"{group_percentages.get('B', 0):.2f}",
+            f"{group_percentages.get('C', 0):.2f}",
+        ]
+    }
+
     stats_df = pd.DataFrame(stats_data)
     st.table(stats_df)
 
@@ -498,11 +460,10 @@ if st.button("Retrieve data"):
     interactive_map()
     # Download options
     st.write("### Download Data")
-    st.warning("The fileswill be downloaded as a zip containing multiple files.")
+    st.warning("The files will be downloaded as a zip containing multiple files.")
 
     @st.fragment
     def generate_files(_nodes, _edges):
-        option2 = "ESRI Shapefile"
         option2 = st.selectbox(
         "Download as:",
         ( "ESRI Shapefile", "GeoJSON", "Parquet", "Feather", "GPKG", "SQLite", "CSV"),
@@ -535,20 +496,11 @@ if st.button("Retrieve data"):
                         file_path = os.path.join(foldername, filename)
                         zf.write(file_path, os.path.relpath(file_path, tmpdir))
             zip_buffer.seek(0)
-            file_nodes = zip_buffer.getvalue()
-            file_edges = zip_buffer.getvalue()
+            zip_bytes = zip_buffer.getvalue()
 
         st.download_button(
             label="Download Data",
-            data=file_nodes,
-            file_name=f'files.zip',
-            # mime='text/csv',
+            data=zip_bytes,
+            file_name='files.zip',
         )
-        # with col2:
-            # st.download_button(
-            #     label="Download Edges Data",
-            #     data=file_edges,
-            #     file_name=f'edges_stats.zip',
-            #     # mime='text/csv',
-            # )
     generate_files(nodes, edges)

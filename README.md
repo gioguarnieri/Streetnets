@@ -1,35 +1,33 @@
-README
-
 # Streetnets
 
 A dashboard for visualizing and analyzing street networks from various cities.
 
 ## Features
 
-- **Main Dashboard**: Visualize city street networks with different metrics
-- **Stats Page**: View statistical visualizations of street network data
-- **City Statistics Page**: Calculate and display comprehensive statistics for any city
+- **Home**: Landing page with an overview of the tool
+- **Retrieve City Data**: Download and analyze the street network of any area (by point, geocoding, bounding box, drawn polygon, or uploaded shapefile)
+- **Database**: Explore pre-calculated statistics and maps for 18 example cities
+- **Glossary**: Plain-language explanations of the technical terms used in the tool
 
 ## How to Use
 
-1. Run the application with `streamlit run main.py`
-2. Use the sidebar to navigate between different pages
-3. On the main page, select a city to visualize its street network
-4. On the Stats page, view statistical visualizations of the selected city
-5. On the City Statistics page, either select a city from the list or enter a custom city name to view detailed statistics
+1. Install the dependencies: `pip install -r requirements.txt`
+2. Run the application with `streamlit run Home.py`
+3. Use the sidebar (or the buttons on the home page) to navigate between pages
+4. On the **Retrieve City Data** page, select an area and a network type, then click "Retrieve data" to view statistics, interactive maps, and download the data
+5. On the **Database** page, select a city to view its pre-calculated statistics and group maps
 
-## City Statistics Page
+## Retrieve City Data Page
 
-The new City Statistics page allows you to:
+The Retrieve City Data page allows you to:
 
-- Select a city from the predefined list or enter a custom city name
-- View comprehensive statistics about the city's street network:
+- Select an area by point + box size, geocoding query, bounding box, drawn polygon, or uploaded shapefile (.zip)
+- View comprehensive statistics about the area's street network:
   - Basic network statistics (nodes, edges, total length)
   - Group distribution (A, B, C groups)
   - Highway type distribution
-  - Detailed metrics for Inverse SP, Cost of Return, and Edge Betweenness
-- Visualize data with interactive charts
-- Download the processed data as CSV files
+- Visualize the retrieved network on an interactive map
+- Download the processed data in several formats (Shapefile, GeoJSON, Parquet, Feather, GPKG, SQLite, CSV)
 
 ## Data Source
 
@@ -42,3 +40,4 @@ The application retrieves data from OpenStreetMap and pre-calculated metrics fro
 - geopandas: For geospatial data handling
 - networkx: For network analysis
 - plotly: For interactive visualizations
+- folium / streamlit-folium: For interactive maps
