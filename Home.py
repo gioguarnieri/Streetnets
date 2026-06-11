@@ -1,6 +1,10 @@
+import io
+
 import streamlit as st
-from PIL import Image
-import streamlit.components.v1 as html
+import pandas as pd
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import plotly.express as px
 
 # Page configuration
 st.set_page_config(
@@ -15,7 +19,7 @@ st.markdown("""
 <style>
     /* Global Reset & Typography */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-    
+
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
@@ -24,7 +28,7 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    
+
     /* Remove default top padding */
     .block-container {
         padding-top: 1rem !important;
@@ -40,7 +44,7 @@ st.markdown("""
         margin-bottom: 3rem;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
     }
-    
+
     .hero-title {
         font-size: 3.5rem;
         font-weight: 800;
@@ -48,19 +52,34 @@ st.markdown("""
         margin-bottom: 1rem;
         line-height: 1.1;
     }
-    
+
     .hero-highlight {
         background: linear-gradient(120deg, #2563eb, #7c3aed);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
-    
+
     .hero-subtitle {
         font-size: 1.25rem;
         color: #64748b;
         max-width: 600px;
         margin: 0 auto 2rem auto;
         line-height: 1.6;
+    }
+
+    /* --- STATS STRIP --- */
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #2563eb;
+        text-align: center;
+        line-height: 1.1;
+    }
+
+    .stat-label {
+        font-size: 0.95rem;
+        color: #64748b;
+        text-align: center;
     }
 
     /* --- CARDS & FEATURES --- */
@@ -73,13 +92,13 @@ st.markdown("""
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         height: 100%;
     }
-    
+
     .feature-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         border-color: #cbd5e1;
     }
-    
+
     .icon-box {
         width: 50px;
         height: 50px;
@@ -103,7 +122,7 @@ st.markdown("""
         position: relative;
         z-index: 0;
     }
-    
+
     .step-content {
         position: relative;
         z-index: 1;
@@ -118,17 +137,6 @@ st.markdown("""
         padding: 0.75rem 1rem;
         transition: all 0.2s;
     }
-    
-    /* Primary Button Style */
-    div[data-testid="column"] > div > div > div > div > .stButton > button {
-        background-color: white; 
-        color: #1e293b;
-        border: 1px solid #cbd5e1;
-    }
-    div[data-testid="column"] > div > div > div > div > .stButton > button:hover {
-        border-color: #2563eb;
-        color: #2563eb;
-    }
 
     /* Footer */
     .custom-footer {
@@ -139,6 +147,11 @@ st.markdown("""
         color: #94a3b8;
     }
 
+    .custom-footer a {
+        color: #2563eb;
+        text-decoration: none;
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -146,18 +159,52 @@ st.markdown("""
 def safe_nav(page_name):
     try:
         st.switch_page(f"pages/{page_name}.py")
-    except:
+    except Exception:
         st.warning(f"Page '{page_name}' not found. Ensure files are in a 'pages/' folder.")
 
-def main():
-    # --- LOGO AREA ---
-    # Centered logo using columns
-    c1, c2, c3 = st.columns([1, 2, 1])
-    with c2:
-        # If you have a logo, uncomment below:
-        # st.image("logo.png", width=150)
-        pass 
 
+@st.cache_data(show_spinner=False)
+def network_preview_png(city="Manhattan"):
+    """Render a real street network from the bundled database as a PNG preview."""
+    edges = pd.read_csv(f"csv/{city}_edges.csv", usecols=["Groups", "geometry"])
+    edges = gpd.GeoDataFrame(edges, geometry=gpd.GeoSeries.from_wkt(edges.geometry), crs="epsg:4326")
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    # Draw local streets first, then arterials, then highways on top
+    styles = {"C": ("#cbd5e1", 0.4), "B": ("#7c3aed", 0.9), "A": ("#2563eb", 1.8)}
+    for group, (color, lw) in styles.items():
+        edges[edges["Groups"] == group].plot(ax=ax, color=color, linewidth=lw)
+    ax.set_axis_off()
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight", transparent=True)
+    plt.close(fig)
+    return buf.getvalue()
+
+
+@st.cache_data(show_spinner=False)
+def circuity_chart():
+    """Bar chart of average circuity across the 18 pre-analyzed cities."""
+    stats = pd.read_csv("csv/examples_stats.csv", index_col=0)
+    circuity = stats["circuity_avg"].sort_values()
+    fig = px.bar(
+        x=circuity.values,
+        y=circuity.index,
+        orientation="h",
+        labels={"x": "Average circuity (1.0 = perfectly straight routes)", "y": ""},
+        color=circuity.values,
+        color_continuous_scale=["#93c5fd", "#2563eb"],
+    )
+    fig.update_layout(
+        height=420,
+        margin=dict(l=0, r=0, t=10, b=0),
+        coloraxis_showscale=False,
+        showlegend=False,
+    )
+    return fig
+
+
+def main():
     # --- HERO SECTION ---
     st.markdown("""
     <div class="hero-container">
@@ -166,7 +213,7 @@ def main():
             <span class="hero-highlight">Without Writing Code</span>
         </h1>
         <p class="hero-subtitle">
-            StreetNets turns complex OpenStreetMap data into actionable graphs and visualizations. 
+            StreetNets turns complex OpenStreetMap data into actionable graphs and visualizations.
             Perfect for urban planners, researchers, and the curious.
         </p>
     </div>
@@ -175,26 +222,41 @@ def main():
     # --- ACTION BUTTONS ---
     # Centered buttons container
     col1, col2, col3, col4, col5 = st.columns([1, 2, 2, 2, 1])
-    
+
     with col2:
-        if st.button("🏢 Start Analysis", use_container_width=True):
+        if st.button("🏢 Start Analysis", use_container_width=True, type="primary"):
             safe_nav("Retrieve_city_data")
-            
+
     with col3:
         if st.button("📚 Glossary", use_container_width=True):
             safe_nav("Glossary")
-            
+
     with col4:
-        if st.button("⬇️ Get Data", use_container_width=True):
-            safe_nav("Download_dataframes")
+        if st.button("🗺️ City Database", use_container_width=True):
+            safe_nav("Database")
+
+    # --- STATS STRIP ---
+    st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+    s1, s2, s3, s4 = st.columns(4)
+    for col, number, label in [
+        (s1, "18", "Pre-analyzed cities"),
+        (s2, "5", "Ways to select an area"),
+        (s3, "7", "Export formats"),
+        (s4, "100%", "Free & open data"),
+    ]:
+        with col:
+            st.markdown(f"""
+            <div class="stat-number">{number}</div>
+            <div class="stat-label">{label}</div>
+            """, unsafe_allow_html=True)
 
     st.markdown("---")
 
     # --- VALUE PROPOSITION (Cards) ---
     st.markdown("<h3 style='text-align: center; margin-bottom: 2rem;'>Why StreetNets?</h3>", unsafe_allow_html=True)
-    
+
     c1, c2, c3 = st.columns(3)
-    
+
     with c1:
         st.markdown("""
         <div class="feature-card">
@@ -203,41 +265,46 @@ def main():
             <p style="color: #64748b;">Forget Python scripts and API keys. Just type a city name and get the network data instantly.</p>
         </div>
         """, unsafe_allow_html=True)
-        
+
     with c2:
         st.markdown("""
         <div class="feature-card">
             <div class="icon-box">📊</div>
             <h3>Visual Analytics</h3>
-            <p style="color: #64748b;">Understand connectivity, circuity, and street orientation through beautiful interactive graphs.</p>
+            <p style="color: #64748b;">Explore street hierarchy groups, highway type distributions, and network statistics on interactive maps and charts.</p>
         </div>
         """, unsafe_allow_html=True)
-        
+
     with c3:
         st.markdown("""
         <div class="feature-card">
             <div class="icon-box">💾</div>
             <h3>Export Ready</h3>
-            <p style="color: #64748b;">Download clean nodes and edges (CSV/Shapefile) ready for GIS software or Excel.</p>
+            <p style="color: #64748b;">Download clean nodes and edges as Shapefile, GeoJSON, GPKG, Parquet, Feather, SQLite, or CSV — ready for GIS software or Excel.</p>
         </div>
         """, unsafe_allow_html=True)
 
     # --- DETAILED FEATURES (Zig-Zag Layout) ---
     st.markdown("<div style='margin-top: 4rem;'></div>", unsafe_allow_html=True)
-    
+
     # Feature 1
     f1_col1, f1_col2 = st.columns([1, 1], gap="large")
     with f1_col1:
-        st.image("https://placehold.co/600x400/png?text=Interactive+Map+Preview", use_container_width=True)
-        # Replace above line with: st.image("your_screenshot_1.png")
+        st.image(
+            network_preview_png(),
+            caption="Manhattan's street hierarchy, rendered straight from the StreetNets database",
+            use_container_width=True,
+        )
     with f1_col2:
-        st.subheader("Interactive Map Interface")
+        st.subheader("Pick Any Area, Your Way")
         st.write("""
         Don't fly blind. Our interactive map allows you to visualize the exact area you are retrieving.
-        
-        * **Bounding Box selection:** Define precise study areas.
-        * **Polygon Drawing:** Draw custom shapes for irregular neighborhoods.
-        * **Real-time Preview:** See the streets before you process them.
+
+        * **Point + radius:** Click the map and choose a box size around it.
+        * **Geocoding:** Type a place name and let OpenStreetMap find its boundaries.
+        * **Bounding box:** Enter exact coordinates for a rectangular study area.
+        * **Polygon drawing:** Draw custom shapes for irregular neighborhoods.
+        * **Shapefile upload:** Bring your own official boundaries as a .zip.
         """)
 
     st.markdown("<div style='margin-top: 3rem;'></div>", unsafe_allow_html=True)
@@ -247,23 +314,22 @@ def main():
     with f2_col1:
         st.subheader("Metric Calculation")
         st.write("""
-        We automatically calculate the hard math for you. 
-        
-        * **Circuity:** How direct are the routes?
-        * **Node Density:** How "walkable" is the intersection density?
-        * **Street Orientation:** Are streets aligned North-South or chaotic?
+        We automatically calculate the hard math for you.
+
+        * **Network statistics:** Street segments, intersections, and total lengths.
+        * **Street hierarchy:** How the network splits into highways (A), arterials (B), and local streets (C).
+        * **Circuity & density:** How direct routes are and how tightly intersections pack, across 18 pre-analyzed cities.
         """)
     with f2_col2:
-        st.image("https://placehold.co/600x400/png?text=Polar+Charts+&+Stats", use_container_width=True)
-        # Replace above line with: st.image("your_screenshot_2.png")
+        st.plotly_chart(circuity_chart(), use_container_width=True)
 
     st.markdown("---")
 
     # --- HOW IT WORKS (Steps) ---
     st.markdown("<h2 style='text-align: center; margin-bottom: 3rem;'>From Zero to Graph in 3 Steps</h2>", unsafe_allow_html=True)
-    
+
     step1, step2, step3 = st.columns(3)
-    
+
     with step1:
         st.markdown("""
         <div style="text-align: center;">
@@ -274,7 +340,7 @@ def main():
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
+
     with step2:
         st.markdown("""
         <div style="text-align: center;">
@@ -285,7 +351,7 @@ def main():
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
+
     with step3:
         st.markdown("""
         <div style="text-align: center;">
@@ -300,7 +366,7 @@ def main():
     # --- FOOTER ---
     st.markdown("""
     <div class="custom-footer">
-        Built with ❤️ using OSMnx and Streamlit <br>
+        Built with ❤️ using OSMnx and Streamlit · <a href="https://github.com/gioguarnieri/Streetnets" target="_blank">GitHub</a> <br>
         <span style="font-size: 0.8rem;">Data © OpenStreetMap contributors</span>
     </div>
     """, unsafe_allow_html=True)
