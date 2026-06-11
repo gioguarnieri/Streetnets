@@ -1,6 +1,7 @@
 streamlit
 streamlit-folium
-folium
+folium>=0.12
+mapclassify
 osmnx
 networkx
 geopandas
