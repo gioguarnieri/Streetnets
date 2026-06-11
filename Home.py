@@ -63,7 +63,8 @@ st.markdown("""
         font-size: 1.25rem;
         color: #64748b;
         max-width: 600px;
-        margin: 0 auto 2rem auto;
+        margin: 0 auto 2rem auto !important;
+        text-align: center;
         line-height: 1.6;
     }
 
