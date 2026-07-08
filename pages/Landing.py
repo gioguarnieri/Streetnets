@@ -211,15 +211,15 @@ def main():
     col1, col2, col3, col4, col5 = st.columns([1, 2, 2, 2, 1])
 
     with col2:
-        if st.button("🏢 Start Analysis", use_container_width=True, type="primary"):
+        if st.button("🏢 Start Analysis", width=True, type="primary"):
             safe_nav("Retrieve_city_data")
 
     with col3:
-        if st.button("📚 Glossary", use_container_width=True):
+        if st.button("📚 Glossary", width=True):
             safe_nav("Glossary")
 
     with col4:
-        if st.button("🗺️ City Database", use_container_width=True):
+        if st.button("🗺️ City Database", width=True):
             safe_nav("Database")
 
     # --- STATS STRIP ---
@@ -280,7 +280,7 @@ def main():
         st.image(
             network_preview_png(),
             caption="Manhattan's street hierarchy, rendered straight from the StreetNets database",
-            use_container_width=True,
+            width=True,
         )
     with f1_col2:
         st.subheader("Pick Any Area, Your Way")
@@ -308,7 +308,7 @@ def main():
         * **Circuity & density:** How direct routes are and how tightly intersections pack, across 18 pre-analyzed cities.
         """)
     with f2_col2:
-        st.plotly_chart(circuity_chart(), use_container_width=True)
+        st.plotly_chart(circuity_chart(), width=True)
 
     st.markdown("---")
 
