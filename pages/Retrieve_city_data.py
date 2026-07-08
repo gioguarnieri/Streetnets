@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 import geopandas as gpd
 import osmnx as ox
 import plotly.express as px
@@ -11,17 +10,6 @@ import io
 import os
 import zipfile
 from tempfile import TemporaryDirectory
-
-st.set_page_config(page_title="Retrieve data", page_icon="📊", layout='wide')
-
-st.markdown("""
-<style>
-    /* Hide Streamlit default elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-</style>
-""", unsafe_allow_html=True)
 
 st.title("City Statistics")
 st.write("This page provides basic statistics for a selected city's street network. Beware that the data is not updated in real-time, so it may not reflect the latest changes in the city's infrastructure and may take a long time to retrieve.")
@@ -36,18 +24,23 @@ if 'center' not in st.session_state:
     st.session_state.center = [-23.533773, -46.625290]
 if 'zoom' not in st.session_state:
     st.session_state.zoom = 10
+if 'pt_lat' not in st.session_state:
+    st.session_state.pt_lat = -23.533773
+    st.session_state.pt_lon = -46.625290
 
-if ('location' not in st.session_state):
-    lat, lon = "-23.533773", "-46.625290"
-else:
-    lat, lon = st.session_state.location.location[0], st.session_state.location.location[1]
+
+@st.cache_data(show_spinner=False)
+def geocode_place(query):
+    """Cache Nominatim lookups so typing/reruns don't re-hit the network."""
+    return ox.geocoder.geocode(query), ox.geocoder.geocode_to_gdf(query)
 
 def map_callback():
     map_state_change = st.session_state.folium_map
-    # When the user interacts with the map, register the clicked location
+    # When the user clicks the map, use that point as the selected location
     if map_state_change['last_clicked']:
         loc = map_state_change['last_clicked']
-        st.session_state.location = folium.Marker([loc['lat'], loc['lng']])
+        st.session_state.pt_lat = loc['lat']
+        st.session_state.pt_lon = loc['lng']
         st.session_state.zoom = map_state_change['zoom']
 
 c1, c2 = st.columns(2)
@@ -61,14 +54,10 @@ with c1:
             
             cc1, cc2 = st.columns(2)
             with cc1:
-                lat = st.text_input("Latitude:", value=lat)
-                if ('location' in st.session_state):
-                    st.session_state.location.location[0] = lat
+                lat = st.number_input("Latitude:", key="pt_lat", min_value=-90.0, max_value=90.0, format="%.6f")
             with cc2:
-                lon = st.text_input("Longitude:", value=lon)
-                if ('location' in st.session_state):
-                    st.session_state.location.location[1] = lon
-            st.session_state.center = [float(lat), float(lon)]
+                lon = st.number_input("Longitude:", key="pt_lon", min_value=-180.0, max_value=180.0, format="%.6f")
+            st.session_state.center = [lat, lon]
             box_size = st.number_input("Box size (in meters):", min_value=1, max_value=10000, value=1000, step=100)
         case "Shapefile":
             st.write("#### Upload Shapefile")
@@ -113,7 +102,7 @@ with c1:
                             
                             # Extract the Polygon (Handling multiple features by unionizing them)
                             # This creates a single Polygon or MultiPolygon covering all features
-                            polygon_geom = gdf.geometry.unary_union
+                            polygon_geom = gdf.geometry.union_all()
                             
                             # Save to session state for retrieval later
                             st.session_state['shapefile_geometry'] = polygon_geom
@@ -142,14 +131,10 @@ with c2:
     match input_method:
         case "Point":
             st.write("### Map ")
-            # State variables
-            if ('location' not in st.session_state):
-                st.session_state.location = folium.Marker(st.session_state.center)
-
             # Map creation
             m = folium.Map(location=st.session_state.center, zoom_start=st.session_state.zoom)
             fg = folium.FeatureGroup(name="Markers")
-            fg.add_child(st.session_state.location)
+            fg.add_child(folium.Marker([lat, lon]))
 
             kw = {
                 "color": "blue",
@@ -186,15 +171,17 @@ with c2:
         case "Geocoding":
             st.write("#### Enter a geocoding query")
             city = st.text_input("Geocoding query:", "Caraguatatuba")
-            latlon = ox.geocoder.geocode(city)
-            gdf = ox.geocoder.geocode_to_gdf(city)
+            try:
+                latlon, gdf = geocode_place(city)
+            except Exception:
+                st.error(f"Could not find '{city}' on OpenStreetMap. Try a more specific query (e.g. 'City, Country').")
+                st.stop()
 
             # Map creation
             m = folium.Map(location=latlon, zoom_start=10)
             fg = folium.FeatureGroup(name="Markers")
-            st.session_state.center = latlon
-            st.session_state.location = folium.Marker(latlon)
-            fg.add_child(st.session_state.location)
+            st.session_state.center = list(latlon)
+            fg.add_child(folium.Marker(latlon))
             gdf.explore(m=m, color='red', name='Geocoding Result', marker_kwds={'radius': 5})
             map_state_change = st_folium(
                 m,
@@ -223,8 +210,7 @@ with c2:
                 m = folium.Map(location=[(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], zoom_start=12)
                 fg = folium.FeatureGroup(name="Bounding Box")
                 fg.add_child(folium.Rectangle(bounds=[[bbox[0], bbox[1]], [bbox[2], bbox[3]]], color='blue', fill=True, fill_color='blue', fill_opacity=0.1))
-                st.session_state.location = folium.Marker([(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2])
-                fg.add_child(st.session_state.location)
+                fg.add_child(folium.Marker([(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2]))
 
                 map_state_change = st_folium(
                     m,
@@ -258,8 +244,7 @@ with c2:
             )
             m.add_child(draw_control)
             # Add a marker for the center point
-            st.session_state.location = folium.Marker(st.session_state.center)
-            fg.add_child(st.session_state.location)
+            fg.add_child(folium.Marker(st.session_state.center))
             map_state_change = st_folium(
                 m,
                 key="folium_map",
@@ -305,79 +290,87 @@ with c2:
             
             
 
-if st.button("Retrieve data"):
+if st.button("Retrieve data", type="primary"):
 
-    match input_method:
-        case "Point":
-            G = ox.graph_from_point(
-                center_point=(float(lat), float(lon)),
-                dist=box_size,
-                network_type=option,
-                simplify=True,
-                retain_all=True,
-                truncate_by_edge=True
-            )
-        case "Geocoding":
-            G = ox.graph_from_place(
-                city,
-                network_type=option,
-                simplify=True,
-                retain_all=True,
-                truncate_by_edge=True
-            )
-        case "From bounding box":
-            if bbox is None:
-                st.error("Please enter a valid bounding box first.")
-                st.stop()
-            G = ox.graph_from_bbox(
-                bbox = (bbox[1], bbox[0], bbox[3], bbox[2]),
-                network_type=option,
-                simplify=True,
-                retain_all=True,
-                truncate_by_edge=True
-            )
-        case "Draw polygon":
-            # Get the drawn polygon from the map
-            if not map_state_change.get("all_drawings"):
-                st.error("Please draw a polygon on the map first.")
-                st.stop()
-            geojson_data = map_state_change["all_drawings"][0]
-            if geojson_data["geometry"]["type"] != "Polygon":
-                st.error("The drawn shape must be a polygon or rectangle.")
-                st.stop()
-            coordinates = geojson_data["geometry"]["coordinates"][0]  # First ring
-            coords = []
-            for cols in coordinates:
-                coords.append((float(cols[0]), float(cols[1])))
-            p = Polygon(coords)
-            G = ox.graph_from_polygon(
-                polygon=p,
-                network_type=option,
-                simplify=True,
-                retain_all=True,
-                truncate_by_edge=True
-            )
-        case "Shapefile":
-            if 'shapefile_geometry' in st.session_state:
-                with st.spinner("Retrieving graph from shapefile polygon..."):
-                    try:
-                        G = ox.graph_from_polygon(
-                            polygon=st.session_state['shapefile_geometry'],
-                            network_type=option,
-                            simplify=True,
-                            retain_all=True,
-                            truncate_by_edge=True
-                        )
-                    except Exception as e:
-                        st.error(f"Error retrieving graph: {e}")
-                        st.stop()
-            else:
-                st.error("Please upload a valid shapefile first.")
-                st.stop()
+    # Validate inputs before hitting the network
+    polygon = None
+    if input_method == "From bounding box" and bbox is None:
+        st.error("Please enter a valid bounding box first.")
+        st.stop()
+    if input_method == "Draw polygon":
+        if not map_state_change.get("all_drawings"):
+            st.error("Please draw a polygon on the map first.")
+            st.stop()
+        geojson_data = map_state_change["all_drawings"][0]
+        if geojson_data["geometry"]["type"] != "Polygon":
+            st.error("The drawn shape must be a polygon or rectangle.")
+            st.stop()
+        coordinates = geojson_data["geometry"]["coordinates"][0]  # First ring
+        polygon = Polygon([(float(cols[0]), float(cols[1])) for cols in coordinates])
+    if input_method == "Shapefile" and 'shapefile_geometry' not in st.session_state:
+        st.error("Please upload a valid shapefile first.")
+        st.stop()
+
+    try:
+        with st.spinner("Retrieving network from OpenStreetMap... large areas can take a while."):
+            match input_method:
+                case "Point":
+                    G = ox.graph_from_point(
+                        center_point=(lat, lon),
+                        dist=box_size,
+                        network_type=option,
+                        simplify=True,
+                        retain_all=True,
+                        truncate_by_edge=True
+                    )
+                case "Geocoding":
+                    G = ox.graph_from_place(
+                        city,
+                        network_type=option,
+                        simplify=True,
+                        retain_all=True,
+                        truncate_by_edge=True
+                    )
+                case "From bounding box":
+                    G = ox.graph_from_bbox(
+                        bbox=(bbox[1], bbox[0], bbox[3], bbox[2]),
+                        network_type=option,
+                        simplify=True,
+                        retain_all=True,
+                        truncate_by_edge=True
+                    )
+                case "Draw polygon":
+                    G = ox.graph_from_polygon(
+                        polygon=polygon,
+                        network_type=option,
+                        simplify=True,
+                        retain_all=True,
+                        truncate_by_edge=True
+                    )
+                case "Shapefile":
+                    G = ox.graph_from_polygon(
+                        polygon=st.session_state['shapefile_geometry'],
+                        network_type=option,
+                        simplify=True,
+                        retain_all=True,
+                        truncate_by_edge=True
+                    )
+    except Exception as e:
+        st.error(f"Error retrieving the network: {e}")
+        st.stop()
+
     nodes, edges = ox.graph_to_gdfs(G)
+    edges["highway"] = edges.highway.map(lambda x: x[0] if isinstance(x, list) else x)
+    edges["Groups"] = edges.highway.map(lambda x: 'A' if x in group1 else 'B' if x in group2 else 'C')
+    # Keep the result in session state so it survives reruns
+    # (changing any widget no longer makes the results disappear)
+    st.session_state.retrieved = {"nodes": nodes, "edges": edges}
 
-    st.write("### Network Data Retrieved")
-    st.write(f"## Statistics for the graph retrieved")
+if "retrieved" in st.session_state:
+    nodes = st.session_state.retrieved["nodes"]
+    edges = st.session_state.retrieved["edges"]
+
+    st.write("## Statistics for the graph retrieved")
 
     # Calculate basic statistics
     total_nodes = len(nodes)
@@ -385,38 +378,23 @@ if st.button("Retrieve data"):
     total_length = edges['length'].sum()
     avg_length = edges['length'].mean()
 
-    edges["highway"] = edges.highway.map(lambda x: x[0] if isinstance(x, list) else x)
-    edges["Groups"] = edges.highway.map(lambda x: 'A' if x in group1 else 'B' if x in group2 else 'C')
-
     # Highway type distribution
     highway_counts = edges['highway'].value_counts()
 
     # Group distribution
     group_counts = edges['Groups'].value_counts()
     group_percentages = (group_counts / total_edges * 100).round(2)
-    stats_data = {
-        "Metric": [
-            "Total Nodes (Intersections)",
-            "Total Edges (Street Segments)",
-            "Total Street Length (m)",
-            "Average Street Segment Length (m)",
-            "Group A Percentage (%)",
-            "Group B Percentage (%)",
-            "Group C Percentage (%)",
-        ],
-        "Value": [
-            total_nodes,
-            total_edges,
-            f"{total_length:.2f}",
-            f"{avg_length:.2f}",
-            f"{group_percentages.get('A', 0):.2f}",
-            f"{group_percentages.get('B', 0):.2f}",
-            f"{group_percentages.get('C', 0):.2f}",
-        ]
-    }
 
-    stats_df = pd.DataFrame(stats_data)
-    st.table(stats_df)
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Intersections (nodes)", f"{total_nodes:,}")
+    m2.metric("Street segments (edges)", f"{total_edges:,}")
+    m3.metric("Total street length", f"{total_length/1000:,.1f} km")
+    m4.metric("Avg. segment length", f"{avg_length:.1f} m")
+
+    g1, g2, g3, _ = st.columns(4)
+    g1.metric("Group A (highways)", f"{group_percentages.get('A', 0):.1f}%")
+    g2.metric("Group B (arterials)", f"{group_percentages.get('B', 0):.1f}%")
+    g3.metric("Group C (local)", f"{group_percentages.get('C', 0):.1f}%")
 
     plot1, plot2 = st.columns(2)
     with plot1:
@@ -438,29 +416,53 @@ if st.button("Retrieve data"):
             color_discrete_sequence=px.colors.qualitative.Set1
         )
         st.plotly_chart(fig_groups)
+        st.caption("A = highways & trunks · B = arterial streets (primary/secondary/tertiary) · C = local streets")
+    st.page_link("pages/Glossary.py", label="What do these terms mean? See the Glossary", icon="📖")
+
     @st.fragment
     def interactive_map():
         st.write("### Map of the Retrieved Data")
-        # Create a map with the retrieved data
-        m = edges.explore(
+        # Very large networks make the folium map unresponsive; show a sample
+        MAX_MAP_FEATURES = 30_000
+        map_edges, map_nodes = edges, nodes
+        if len(edges) > MAX_MAP_FEATURES:
+            st.info(
+                f"This network has {len(edges):,} street segments — the interactive map shows a "
+                f"random sample of {MAX_MAP_FEATURES:,} to stay responsive. "
+                "The download below always contains the full network."
+            )
+            map_edges = edges.sample(MAX_MAP_FEATURES, random_state=0)
+        if len(nodes) > MAX_MAP_FEATURES:
+            map_nodes = nodes.sample(MAX_MAP_FEATURES, random_state=0)
+        tooltip_cols = [c for c in ['name', 'length', 'highway', 'Groups'] if c in map_edges.columns]
+        m = map_edges.explore(
             column='length',
             cmap='viridis',
-            tooltip=['name', 'length', 'highway', 'Groups'],
+            tooltip=tooltip_cols,
             name='Street Segments'
         )
         # Add the nodes to the map
-        nodes.explore(
+        map_nodes.explore(
             m=m,
             color='red',
             marker_kwds={'radius': 5, 'fill': True, 'fill_color': 'red', 'fill_opacity': 0.6},
             name='Intersections'
         )
         st_folium(m, width="100%", height=500)
-        
+
     interactive_map()
     # Download options
     st.write("### Download Data")
     st.warning("The files will be downloaded as a zip containing multiple files.")
+
+    def flatten_for_export(gdf):
+        """Turn the (u, v, key)/osmid index into columns and stringify list
+        values, which most file drivers (Shapefile, GPKG, ...) cannot store."""
+        out = gdf.reset_index()
+        for col in out.columns:
+            if col != out.geometry.name and out[col].dtype == object:
+                out[col] = out[col].map(lambda v: ", ".join(map(str, v)) if isinstance(v, list) else v)
+        return out
 
     @st.fragment
     def generate_files(_nodes, _edges):
@@ -476,6 +478,8 @@ if st.button("Retrieve data"):
         else:
             file_ext = option2.lower()
         # Generate files in memory
+        _nodes = flatten_for_export(_nodes)
+        _edges = flatten_for_export(_edges)
 
 
         with TemporaryDirectory() as tmpdir:
@@ -484,6 +488,12 @@ if st.button("Retrieve data"):
             if option2 == "CSV":
                 _nodes.to_csv(nodes_path, index=False)
                 _edges.to_csv(edges_path, index=False)
+            elif option2 == "Parquet":
+                _nodes.to_parquet(nodes_path, index=False)
+                _edges.to_parquet(edges_path, index=False)
+            elif option2 == "Feather":
+                _nodes.to_feather(nodes_path, index=False)
+                _edges.to_feather(edges_path, index=False)
             else:
                 _nodes.to_file(nodes_path, index=False)
                 _edges.to_file(edges_path, index=False)
@@ -501,6 +511,6 @@ if st.button("Retrieve data"):
         st.download_button(
             label="Download Data",
             data=zip_bytes,
-            file_name='files.zip',
+            file_name=f'streetnets_{file_ext}.zip',
         )
     generate_files(nodes, edges)

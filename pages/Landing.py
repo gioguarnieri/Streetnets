@@ -1,18 +1,10 @@
 import io
 
 import streamlit as st
-import pandas as pd
-import geopandas as gpd
 import matplotlib.pyplot as plt
 import plotly.express as px
 
-# Page configuration
-st.set_page_config(
-    page_title="StreetNets | No-Code Network Analysis",
-    page_icon="🛣️",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+from streetnets_app.data import load_city_edges, load_examples_stats
 
 # --- CUSTOM CSS ---
 st.markdown("""
@@ -23,11 +15,6 @@ st.markdown("""
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
-
-    /* Hide Streamlit Boilerplate */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
 
     /* Remove default top padding */
     .block-container {
@@ -167,8 +154,7 @@ def safe_nav(page_name):
 @st.cache_data(show_spinner=False)
 def network_preview_png(city="Manhattan"):
     """Render a real street network from the bundled database as a PNG preview."""
-    edges = pd.read_csv(f"csv/{city}_edges.csv", usecols=["Groups", "geometry"])
-    edges = gpd.GeoDataFrame(edges, geometry=gpd.GeoSeries.from_wkt(edges.geometry), crs="epsg:4326")
+    edges = load_city_edges(city, columns=["Groups", "geometry"])
 
     fig, ax = plt.subplots(figsize=(6, 6))
     # Draw local streets first, then arterials, then highways on top
@@ -186,7 +172,7 @@ def network_preview_png(city="Manhattan"):
 @st.cache_data(show_spinner=False)
 def circuity_chart():
     """Bar chart of average circuity across the 18 pre-analyzed cities."""
-    stats = pd.read_csv("csv/examples_stats.csv", index_col=0)
+    stats = load_examples_stats()
     circuity = stats["circuity_avg"].sort_values()
     fig = px.bar(
         x=circuity.values,

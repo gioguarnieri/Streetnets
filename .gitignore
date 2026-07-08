@@ -4,3 +4,10 @@ __pycache__/
 cache/
 Database_generator/
 backups/
+
+# Generated data & build artifacts
+data/
+dist/
+build/
+*.egg-info/
+.claude/launch.json

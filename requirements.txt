@@ -1,11 +1,12 @@
-streamlit
-streamlit-folium
+streamlit>=1.45
+streamlit-folium>=0.20
 folium>=0.12
 mapclassify
-osmnx
+osmnx>=2.0
 networkx
-geopandas
-shapely
+geopandas>=1.0
+shapely>=2.0
 pandas
 plotly
 matplotlib
+pyarrow

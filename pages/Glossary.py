@@ -1,6 +1,7 @@
 import streamlit as st
 
-st.set_page_config(page_title="Glossary", page_icon="📖")
+# Keep the glossary text readable in the app-wide "wide" layout
+st.markdown("<style>.block-container {max-width: 900px;}</style>", unsafe_allow_html=True)
 
 st.title("📖 Glossary of Terms")
 

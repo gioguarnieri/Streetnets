@@ -1,0 +1,71 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "streetnets"
+dynamic = ["version"]
+description = "No-code street network analysis and visualization on OpenStreetMap data"
+readme = "README.md"
+license = { file = "LICENSE.txt" }
+authors = [
+    { name = "Giovanni Guarnieri Soares", email = "giovanniguarnierisoares@gmail.com" },
+]
+requires-python = ">=3.10"
+keywords = ["openstreetmap", "osmnx", "street-network", "urban-planning", "gis"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+dependencies = [
+    "streamlit>=1.45",
+    "streamlit-folium>=0.20",
+    "folium>=0.12",
+    "mapclassify",
+    "osmnx>=2.0",
+    "networkx",
+    "geopandas>=1.0",
+    "shapely>=2.0",
+    "pandas",
+    "plotly",
+    "matplotlib",
+    "pyarrow",
+    "platformdirs",
+]
+
+[project.scripts]
+streetnets = "streetnets_app.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/gioguarnieri/Streetnets"
+Issues = "https://github.com/gioguarnieri/Streetnets/issues"
+
+[tool.hatch.version]
+path = "streetnets_app/__init__.py"
+
+[tool.hatch.build]
+exclude = ["**/__pycache__"]
+
+# The Streamlit app files live at the repo root (Home.py, pages/) so that
+# `streamlit run Home.py` keeps working in a source checkout. For the wheel
+# they are bundled inside the package so the `streetnets` command can find
+# them after installation.
+[tool.hatch.build.targets.wheel]
+packages = ["streetnets_app"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"Home.py" = "streetnets_app/Home.py"
+"pages" = "streetnets_app/pages"
+"csv/examples_stats.csv" = "streetnets_app/csv/examples_stats.csv"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "streetnets_app",
+    "pages",
+    "Home.py",
+    "csv/examples_stats.csv",
+    "scripts",
+    "README.md",
+    "LICENSE.txt",
+]
