@@ -10,3 +10,4 @@ pandas
 plotly
 matplotlib
 pyarrow
+platformdirs
