@@ -3,9 +3,9 @@ import io
 import streamlit as st
 import matplotlib.pyplot as plt
 import plotly.express as px
-import plotly.graph_objects as go
 
 from streetnets_app.data import CITY_LIST, load_city_edges, load_examples_stats
+from streetnets_app.plots import stats_violin
 
 
 @st.cache_data(show_spinner=False)
@@ -57,34 +57,6 @@ def group_maps_png(city, column):
     return buf.getvalue()
 
 
-def stats_violin(df):
-    fig = go.Figure()
-    for column in df.columns:
-        fig.add_trace(
-            go.Violin(
-                y=df[column],
-                name=column,
-                box_visible=True,
-                meanline_visible=True,
-                spanmode="hard",
-                points="all",
-                hovertext=df.index.astype(str),
-                hoverinfo="text",
-            )
-        )
-    fig.update_layout(
-        violingap=0.30,
-        violingroupgap=0,
-        violinmode="overlay",
-        width=1500,
-        height=600,
-        font_size=20,
-        showlegend=False,
-        margin=dict(l=20, r=20, t=45, b=0),
-    )
-    return fig
-
-
 st.title("🗺️ City Database")
 st.write("Explore pre-calculated statistics and maps for 18 example cities.")
 
@@ -134,9 +106,6 @@ with st.spinner("Rendering maps..."):
 st.markdown("## All cities stats")
 
 df_cut = load_stats()
-# normalize the data to better visualize it
-normalized_df = (df_cut - df_cut.min()) / (df_cut.max() - df_cut.min())
-
-st.plotly_chart(stats_violin(normalized_df))
+st.plotly_chart(stats_violin(df_cut))
 
 st.dataframe(df_cut)

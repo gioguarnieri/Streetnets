@@ -5,11 +5,16 @@ import plotly.express as px
 from streamlit_folium import st_folium
 import folium
 from folium.plugins import Draw
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, box
 import io
 import os
 import zipfile
 from tempfile import TemporaryDirectory
+from uuid import uuid4
+
+from streetnets_app.config import deep_analysis_enabled
+
+DEEP_ANALYSIS = deep_analysis_enabled()
 
 st.title("City Statistics")
 st.write("This page provides basic statistics for a selected city's street network. Beware that the data is not updated in real-time, so it may not reflect the latest changes in the city's infrastructure and may take a long time to retrieve.")
@@ -362,15 +367,50 @@ if st.button("Retrieve data", type="primary"):
     nodes, edges = ox.graph_to_gdfs(G)
     edges["highway"] = edges.highway.map(lambda x: x[0] if isinstance(x, list) else x)
     edges["Groups"] = edges.highway.map(lambda x: 'A' if x in group1 else 'B' if x in group2 else 'C')
+
+    # Capture the area of interest so the Deep Analysis page can compute
+    # database-comparable density metrics (area in m²)
+    if input_method == "Point":
+        aoi = {"method": "point", "point": (lat, lon), "dist": box_size}
+        # Same convention as the 18-city database: a (2·dist)² square
+        area_m2 = float((2 * box_size) ** 2)
+    else:
+        match input_method:
+            case "Geocoding":
+                aoi_geom = gdf.union_all()
+            case "From bounding box":
+                aoi_geom = box(bbox[1], bbox[0], bbox[3], bbox[2])
+            case "Draw polygon":
+                aoi_geom = polygon
+            case _:  # Shapefile
+                aoi_geom = st.session_state['shapefile_geometry']
+        aoi = {"method": input_method, "geometry": aoi_geom}
+        area_m2 = float(ox.projection.project_geometry(aoi_geom)[0].area)
+
     # Keep the result in session state so it survives reruns
     # (changing any widget no longer makes the results disappear)
-    st.session_state.retrieved = {"nodes": nodes, "edges": edges}
+    st.session_state.retrieved = {
+        "nodes": nodes,
+        "edges": edges,
+        "aoi": aoi,
+        "area_m2": area_m2,
+        "network_type": option,
+        "token": uuid4().hex,
+    }
+    if DEEP_ANALYSIS:
+        # Only kept for the Deep Analysis page; on a hosted server it would
+        # just double each session's memory footprint.
+        st.session_state.retrieved["graph"] = G
 
 if "retrieved" in st.session_state:
     nodes = st.session_state.retrieved["nodes"]
     edges = st.session_state.retrieved["edges"]
 
     st.write("## Statistics for the graph retrieved")
+    if DEEP_ANALYSIS:
+        st.page_link("pages/Deep_analysis.py",
+                     label="Go deeper: centrality, vulnerability, and database comparison",
+                     icon="🔬")
 
     # Calculate basic statistics
     total_nodes = len(nodes)

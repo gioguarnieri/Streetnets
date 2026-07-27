@@ -1,0 +1,272 @@
+\documentclass[11pt, letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1.5cm]{geometry}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{svg}
+\usepackage{tabu}
+\usepackage{enumitem}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\newlist{selectlist}{itemize}{2}
+\setlist[selectlist]{label=$\square$,leftmargin=*,noitemsep,topsep=0pt}
+
+\usepackage{lmodern}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=blue,
+}
+ 
+\urlstyle{same}
+
+% Set up the section label formatting
+\titleformat{\section}[block]{\hspace{1em}\bfseries}{\thesection.}{0.5em}{} 
+\titleformat{\subsection}[block]{\hspace{1em}}{\thesubsection}{0.5em}{}
+
+
+
+
+
+%% 
+%% Copyright 2007, 2008, 2009 Elsevier Ltd
+%% 
+%% This file is part of the 'Elsarticle Bundle'.
+%% ---------------------------------------------
+%% 
+%% It may be distributed under the conditions of the LaTeX Project Public
+%% License, either version 1.2 of this license or (at your option) any
+%% later version.  The latest version of this license is in
+%%    http://www.latex-project.org/lppl.txt
+%% and version 1.2 or later is part of all distributions of LaTeX
+%% version 1999/12/01 or later.
+%% 
+%% The list of all files belonging to the 'Elsarticle Bundle' is
+%% given in the file `manifest.txt'.
+%% 
+
+%% Template article for Elsevier's document class `elsarticle'
+%% with numbered style bibliographic references
+%% SP 2008/03/01
+
+%\documentclass[preprint,12pt, a4paper]{elsarticle}
+
+%% Use the option review to obtain double line spacing
+%% \documentclass[authoryear,preprint,review,12pt]{elsarticle}
+
+%% For including figures, graphicx.sty has been loaded in
+%% elsarticle.cls. If you prefer to use the old commands
+%% please give \usepackage{epsfig}
+
+%% The amssymb package provides various useful mathematical symbols
+%\usepackage{amssymb}
+%\usepackage{hyperref}
+%% The amsthm package provides extended theorem environments
+%% \usepackage{amsthm}
+
+%% The lineno packages adds line numbers. Start line numbering with
+%% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it on
+%% for the whole article with \linenumbers.
+%\usepackage{lineno}
+
+%\journal{Software Impacts}
+
+\begin{document}
+% \noindent
+% {\Large {\textbf{\textit {Software Impacts} article template}}} \textit{Version 2 (July 2021)}
+% \vskip0.5cm
+% \noindent
+% \textbf{Before you complete this template}, a few important points to note:
+% \begin{itemize}
+% \item[$\bullet$]{This template is for an Original Software Publication (OSP). If you are submitting an update to a software article that has already been published in \textit{Software Impacts}, please use the \underline{software update template}.}
+% \item[$\bullet$]{The format of a software article is very different to a traditional research article. To help you write yours, we have created this template. \textbf{\textit{Software Impacts} will only consider articles submitted using this template.}}
+% \item[$\bullet$]{It is mandatory to {\bf publicly share the code/software} referred to in your software article. You’ll find information on our software sharing criteria in the \textit{Software Impacts} \href{https://www.elsevier.com/journals/software-impacts/2665-9638/guide-for-authors}{\underline{Guide for Authors}}.}  
+% \item[$\bullet$]{It’s important to consult the \href{https://www.elsevier.com/journals/software-impacts/2665-9638/guide-for-authors}{\underline{Guide for Authors}} when preparing your manuscript; it highlights mandatory requirements and is packed with useful advice.}
+% \end{itemize}
+% \vskip0.5cm
+% \noindent
+% \textbf{Still got questions?}
+% \begin{itemize}
+% \item[$\triangleright$]{Email our editorial team at \href{mailto:Software.Impacts@elsevier.com}{\underline{Software.Impacts@elsevier.com}}}
+% \end{itemize}
+
+% \noindent
+% Now you are ready to fill in the template below. As you complete each section, please carefully read the associated instructions. All sections are mandatory, unless marked optional.\newline
+% \vskip0.5cm
+% \begin{center}
+% \colorbox{yellow}{\textbf{ \textit{ Once you have completed the template, delete this line and everything above it before} }}
+% \colorbox{yellow}{\textbf{ \textit{ submitting your article. In addition, please delete the instructions in the template}}} 
+% \colorbox{yellow}{\textbf{ \textit{  (the text written in italics).}}}
+% \colorbox{yellow}{- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - }
+% \end{center}
+
+
+\noindent
+\textbf{Streetnets - Democratizing Topological Analysis of Urban Street Networks}
+\vskip0.5cm
+\noindent
+\textbf{Giovanni Guarnieri Soares, National Institute for Space Research (INPE), SP - Brazil, giovanni.soares@inpe.br\\
+Luiz Max Carvalho, Getúlio Vargas Foundation (FGV), RJ - Brazil, luiz.fagundes@fgv.br\\
+Leonardo Bacelar Lima Santos, National Center for Monitoring and Early Warning of Natural Disasters (Cemaden), SP - Brazil, santoslbl@gmail.com
+}\\
+
+\noindent
+\textbf{Abstract}\\
+Analyzing street network topology often requires specialized programming skills. We present StreetNets, a web-based dashboard built with Streamlit and OSMnx that democratizes access to OpenStreetMap data. It enables non-technical users to retrieve, visualize, and analyze urban networks through an intuitive interface. The application computes key topological characteristics values, classifies road hierarchies (Strategic, Arterial, Local), and supports data export in standard formats such as Shapefile and GeoJSON. StreetNets effectively bridges the gap between complex network algorithms and practical urban planning workflows.
+\vskip0.5cm
+
+\noindent
+\textbf{Keywords}\\
+\textit{Complex Networks, OpenStreetMap, Streets}
+\vskip0.5cm
+\newpage
+\noindent
+\textbf{Code metadata}\\
+% \textit{Please replace the italicized text in the right column with the correct information about your code/software and leave the left column untouched.}\\
+
+%\begin{table}[!h]
+\noindent
+\begin{tabular}{|l|p{6.5cm}|p{9.5cm}|}
+\hline
+\textbf{Nr.} & \textbf{Code metadata description} & \textbf{Please fill in this column} \\
+\hline
+C1 & Current code version & v1.01 \\
+\hline
+C2 & Permanent link to code/repository used for this code version & https://github.com/gioguarnieri/Streetnets \\
+\hline
+C3  & Permanent link to Reproducible Capsule & N/A \\
+\hline
+C4 & Legal Code License   & MIT License. \\
+\hline
+C5 & Code versioning system used & git. \\
+\hline
+C6 & Software code languages, tools, and services used & Python\\
+\hline
+C7 & Compilation requirements, operating environments \& dependencies & Python 3.9, Streamlit, Pandas, Geopandas, OSMnx, NetworkX, Plotly, Streamlit\_folium, Folium, shapely \\
+\hline
+C8 & If available Link to developer documentation/manual & \footnotesize github.com/gioguarnieri/Streetnets/blob/main/README.md \\
+\hline
+C9 & Support email for questions & giovanni.soares@inpe.br \\
+\hline
+\end{tabular}\\
+%\caption{Code metadata (mandatory)}
+%\label{} 
+%\end{table}
+% \vskip0.5cm
+% \noindent
+% \textit{\textbf{Body of the article} (excluding metadata, tables, figures, references)}\\
+% \textit{You are welcome to write up to three pages of text that describes your software. Include points such as:}
+% \noindent
+% \begin{itemize}
+% \item \textit{A short description of the high-level functionality and purpose of the software for a diverse, non-specialist audience}
+% \item \textit{An Impact overview that illustrates the purpose of your software and its achieved results. For example:}
+% {\it \begin{itemize}
+% \item[$\circ$]Any new research questions that can be pursued as a result of your software: The software enables people who do not know how to program in Python to have access to OSM data and OSMNx graphs.
+% \item[$\circ$]In what way, and to what extent, your software improves the pursuit of existing research questions: With the accessibility to new data, it is possible to incorporate network metrics and data easily.
+% \item[$\circ$]Any ways in which your software has changed the daily practice of its users.
+% \item[$\circ$]How widespread the use of the software is within and outside the intended user group.
+% \item[$\circ$]How the software is being used in commercial settings and/or how it has led to the creation of spin-off companies.
+% \end{itemize}}
+% \textit{\item Mentions (if applicable) any ongoing research projects using your software. }
+% \textit{\item Limitations and future improvements/applications of your software}
+% \textit{\item List of all scholarly publications enabled by your software.}
+
+% \end{itemize}
+
+\section{Introduction}
+
+{\color{red} codificação hash}
+
+We classify a network as ``spatial'' when its nodes are located within a space equipped with a way to measure distance. Because of this geography, distance acts as a constraint: nodes are significantly less likely to connect if they are far apart \cite{barthelemy2011spatial, barthelemy2022spatial}.
+
+Street networks are an example of spatial networks. Like railways and utility systems (such as power, water, and sewage), street networks are classified as complex spatial networks. In all these examples, the physical geometry of the space dictates the position of both the nodes and the edges connecting them \cite{boeing2017osmnx}. 
+
+However, transforming raw geographic data into rigorous graph-theoretic models presents significant technical challenges, particularly regarding data acquisition and topological consistency. OSMNx \cite{boeing2017osmnx} is a Python module designed to facilitate the integration of OpenStreetMap data with NetworkX, addressing the problems of data accessibility and analysis consistency.
+
+To improve data accessibility, we built StreetNets, a web-based dashboard built with Streamlit that makes street network data from OpenStreetMap accessible to non-technical users, powered by OSMnx. It provides interactive visualizations, comprehensive analytics, and data export capabilities for urban street networks across multiple cities worldwide. The application eliminates the need for coding knowledge, allowing researchers, urban planners, and data enthusiasts to explore and analyze street network metrics through an intuitive graphical interface.
+
+\section{Graphs}
+
+Graphs are a mathematical tool defined as $G = (V,E),$ where $V$ is a set of vertices and $E$ is a set of edges, an ordered pair of vertices. In our context of urban modeling, $V$ represents street intersections or dead-ends, while $E$ represents the street segments connecting them. These edges are typically weighted by physical distance, allowing for the analysis of metric topology.
+
+\subsection{Key Metrics and Classification}
+
+The analytical module computes fundamental topological and geometric metrics to characterize the retrieved network $G$. The network size is quantified by the total number of nodes ($N = |V|$), representing intersections or endpoints, and edges ($M = |E|$), representing physical street segments. Additionally, the system evaluates infrastructure scale through the \textit{Total Street Length} ($L_{total} = \sum l_e$), which provides the aggregate dimension of the network, and the \textit{Average Segment Length} ($\bar{l} = \frac{1}{M} \sum l_e$), serving as a proxy for urban granularity and block size.
+
+To analyze the functional hierarchy of the street network, edges are categorized into three distinct groups based on OpenStreetMap \texttt{highway} tags. \textbf{Group A (Strategic)} encompasses high-capacity infrastructure, including motorways and trunk roads, designed for high-speed, long-distance mobility. \textbf{Group B (Arterial)} includes primary, secondary, and tertiary roads that form the city's main distributor skeleton, connecting distinct districts. Finally, \textbf{Group C (Local)} consists of residential and other minor streets that facilitate last-mile access and permeating movements within neighborhoods.
+
+\section{Software description and architecture}
+
+
+
+The developed application follows a modular, interactive dashboard architecture designed for the retrieval and analysis of urban street network data, as illustrated by Figure \ref{fig:flow}. The system is implemented in Python using the Streamlit framework, which orchestrates the user interface, state management, and data flow, depicted in Figure \ref{fig:example}. The architecture is composed of four distinct layers:
+
+\begin{itemize}
+    \item \textbf{Input Layer:} This component facilitates the definition of the Area of Interest (AOI) through four distinct methods: coordinate point selection with a buffered radius, textual geocoding queries, manual bounding box entry, or interactive polygon drawing on a base map.
+    
+    \item \textbf{Geospatial Processing Layer:} Utilizing the \texttt{OSMnx} library, the system interfaces with OpenStreetMap (OSM) to retrieve street network topology. Depending on the input method, the system executes specific retrieval algorithms (e.g., \textit{graph\_from\_point}, \textit{graph\_from\_polygon}) to construct a directed graph $G(V, E)$, where $V$ represents intersections (nodes) and $E$ represents street segments (edges).
+    
+    \item \textbf{Analytical Layer:} Upon retrieval, the graph is decomposed into \texttt{GeoDataFrames} for statistical analysis. Edges are classified into hierarchical groups (e.g., arterial vs. local roads) based on OSM \textit{highway} tags. Key metrics, including total network length, edge density, and road-type distribution, are computed in this stage.
+    
+    \item \textbf{Visualization and Export Layer:} The results are rendered via an interactive interface utilizing \texttt{Folium} for geospatial mapping and \texttt{Plotly} for statistical charting. The system features a robust export module that supports multiple geospatial standards (e.g., ESRI Shapefile, GeoJSON, Parquet, CSV). Selected datasets are dynamically generated in a temporary environment, compressed into a single ZIP archive, and delivered to the user.
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \includesvg[width=0.6\linewidth]{Images/flow_streetnets.drawio.svg}
+    \caption{Flowchart of retrieving data.}
+    \label{fig:flow}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{Images/retrievedata.png}
+    \caption{Retrieve data page layout.}
+    \label{fig:example}
+\end{figure}
+
+\section{Impact overview}
+
+OSMnx has established itself as a critical tool in urban analytics, widely adopted for its ability to correct topological errors in raw OSM data \cite{boeing2017osmnx}. Building on this foundation, StreetNets extends these capabilities to non-coders. For instance, the tool was recently utilized to identify navigational bottlenecks in diffusive dynamics \cite{soares2024}, demonstrating its utility in complex network research where rapid data acquisition and consistent topology are required for simulation.
+
+StreetNets bridges the gap between complex street network analysis and accessible data visualization. By combining OpenStreetMap data, sophisticated network algorithms, and an intuitive Streamlit interface, it democratizes urban data analysis for researchers, planners, and the curious public alike.
+
+By interfacing OpenStreetMap’s global dataset with an intuitive graphical interface, StreetNets bridges the gap between complex network analysis and practical usability. This scalability facilitates data-driven decision-making in urban planning and research while allowing for future integration of additional metrics and analytical capabilities.
+
+\section{Limitations and improvements}
+
+The computation of advanced topological metrics, particularly betweenness centrality and global shortest path distributions, imposes significant computational demands due to their algorithmic complexity. Consequently, as the spatial scope expands to encompass large urban networks with tens of thousands of intersections, the processing time increases non-linearly. This computational burden renders real-time calculation of such metrics in a web-based environment challenging, often necessitating high-performance computing resources or offline pre-processing.
+
+To address the limitations of running complex calculations on the web, we aim to develop a downloadable version of the software that runs directly on the user's computer. This shift will allow researchers to leverage their own hardware to compute demanding metrics, such as betweenness centrality, without worrying about server timeouts or cloud resource limits. By moving processing locally, users can analyze much larger networks and perform deeper topological analysis that would otherwise be too slow or expensive to host online, while maintaining a simple user interface.
+
+
+
+\textbf{Acknowledgements}\\
+The authors thank the funding projects 140196/2022-6, 446053/2023-6, and 305205/2025-0 CNPq, projects 260003/005679/2023 and 260003/013252/2024 FAPERJ,
+and project CAPES Finance Code 001.
+
+
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\noindent
+% \textit{\textbf{Illustrative examples}}\\
+% \textit{Optional. You may submit an explanatory video or screencast that will appear to the right of your published article on ScienceDirect. Only one MP4 formatted video (max. size 150MB) is possible per article and this should be uploaded as a single supplementary file with your submission. Recommended video dimensions are 640 x 480 at a maximum of 30 frames / second. %Prior to submission, please test and validate your .mp4 file at  \url{http://elsevier-apps.sciverse.com/GadgetVideoPodcastPlayerWeb/verification}. This tool will display your video in exactly the same way as it will appear on ScienceDirect.
+% }
+
+% \vskip 1.5cm
+% \begin{center}
+% {\huge \it Reminder: Before you submit, please delete all 
+% the instructions in this document (the text in italics), including this paragraph.\\
+% Thank you!}
+% \end{center}
+
+
+\end{document}
+%\endinput
+%%
+%% End of file `SoftwareX_article_template.tex'.

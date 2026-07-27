@@ -9,6 +9,8 @@ chrome. Page content lives in the pages/ folder.
 
 import streamlit as st
 
+from streetnets_app.config import deep_analysis_enabled
+
 st.set_page_config(
     page_title="StreetNets | No-Code Network Analysis",
     page_icon="🛣️",
@@ -32,7 +34,11 @@ pages = [
     st.Page("pages/Landing.py", title="Home", icon="🏠", default=True),
     st.Page("pages/Retrieve_city_data.py", title="Retrieve City Data", icon="📊"),
     st.Page("pages/Database.py", title="City Database", icon="🗺️"),
-    st.Page("pages/Glossary.py", title="Glossary", icon="📖"),
 ]
+# Deep Analysis runs heavy computations (betweenness, robustness curves) that
+# would exhaust a shared server — only offered when running locally.
+if deep_analysis_enabled():
+    pages.append(st.Page("pages/Deep_analysis.py", title="Deep Analysis", icon="🔬"))
+pages.append(st.Page("pages/Glossary.py", title="Glossary", icon="📖"))
 
 st.navigation(pages).run()

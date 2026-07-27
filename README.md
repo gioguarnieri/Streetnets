@@ -32,6 +32,15 @@ streamlit run Home.py
 A source checkout reads the city data directly from the `csv/` folder (or from
 `data/` if you have generated the faster GeoParquet files, see below).
 
+## Hosted vs. local
+
+The **Deep Analysis** page (betweenness/closeness centrality, vulnerability
+simulation, robustness curves) runs computations too heavy for a shared
+server, so it is **automatically disabled on hosted deployments** (Streamlit
+Community Cloud is auto-detected) and enabled when running locally. The
+environment variable `STREETNETS_DEEP_ANALYSIS` overrides the detection in
+either direction (`1` to force on, `0` to force off).
+
 ## How to Use
 
 1. Use the sidebar (or the buttons on the home page) to navigate between pages

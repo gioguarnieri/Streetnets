@@ -10,3 +10,6 @@ pandas
 plotly
 matplotlib
 pyarrow
+platformdirs
+python-igraph>=0.11
+scipy
