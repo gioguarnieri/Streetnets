@@ -91,8 +91,8 @@ the pre-calculated metrics is in preparation. Until it is published, please
 cite this repository:
 
 ```
-Guarnieri Soares, G. StreetNets: no-code street network analysis on
-OpenStreetMap data. https://github.com/gioguarnieri/Streetnets
+Guarnieri Soares, G. StreetNets: Democratizing Topological Analysis of Urban Street Networks.
+https://github.com/gioguarnieri/Streetnets
 ```
 
 ## Libraries Used
