@@ -74,7 +74,7 @@ C9 & Support email for questions & giovanni.soares@inpe.br \\
 
 A network is called \emph{spatial} when its nodes are embedded in a space with a notion of distance; distance then constrains connections, so nodes far apart are less likely to be linked \cite{barthelemy2011spatial, barthelemy2022spatial}. Street networks are a canonical example: intersections and dead-ends are nodes, street segments are edges, and the physical geometry dictates both \cite{boeing2017osmnx}. Modeling a city as a graph $G=(V,E)$ allows its structure to be quantified with network science tools, from simple size measures to centrality and robustness.
 
-Turning raw geographic data into consistent graphs, however, is technically demanding. OSMnx \cite{boeing2017osmnx} solved much of this problem by integrating OpenStreetMap (OSM) with NetworkX, but it remains a Python library and is out of reach for users who do not program. StreetNets is a no-code dashboard, powered by OSMnx, that lets researchers, urban planners, and the general public retrieve, visualize, analyze, and export street networks for any area of the world through a graphical interface.
+Turning raw geographic data into consistent graphs, however, is technically demanding. OSMnx \cite{boeing2017osmnx, boeing2025osmnx} solved much of this problem by integrating OpenStreetMap (OSM) with NetworkX, but it remains a Python library and is out of reach for users who do not program. StreetNets is a no-code dashboard, powered by OSMnx, that lets researchers, urban planners, and the general public retrieve, visualize, analyze, and export street networks for any area of the world through a graphical interface. An early version of the tool was presented at GEOINFO 2024 \cite{streetnets_geoinfo2024}; this article describes the substantially extended current version, which adds new input methods, a database of pre-analyzed cities, advanced network analyses, and a locally installable package.
 
 \section{Software description}
 
@@ -119,7 +119,7 @@ StreetNets is implemented in Python with the Streamlit framework, which handles 
 
 \section{Impact overview}
 
-OSMnx is an established tool in urban analytics, widely adopted for producing topologically correct graphs from raw OSM data \cite{boeing2017osmnx}. StreetNets extends this capability to users who do not program. Its impact can be summarized as follows:
+OSMnx is an established tool in urban analytics, widely adopted for producing topologically correct graphs from raw OSM data \cite{boeing2017osmnx}. StreetNets extends this capability to users who do not program. Its first version was peer-reviewed and presented to the Brazilian geoinformatics community at GEOINFO 2024 \cite{streetnets_geoinfo2024}, and the tool has since grown from a data retrieval interface into a full analysis environment. Its impact can be summarized as follows:
 
 \begin{itemize}
     \item \textbf{New users and research questions.} Urban planners, geographers, civil defense staff, and students can obtain analysis-ready street graphs and network metrics without writing code, and can bring them into existing GIS workflows (QGIS, ArcGIS) through standard formats. This makes network-based questions, such as which streets concentrate shortest paths or which areas become isolated when a region floods, accessible to practitioners outside network science.
@@ -132,6 +132,7 @@ OSMnx is an established tool in urban analytics, widely adopted for producing to
 \noindent
 \textbf{Scholarly publications enabled by StreetNets:}
 \begin{enumerate}[noitemsep]
+    \item G. Guarnieri Soares, L. M. Carvalho, L. B. L. Santos. StreetNets -- A tool for network analysis on street maps. \textit{Proceedings of the Brazilian Symposium on GeoInformatics (GEOINFO 2024)}, 2024 \cite{streetnets_geoinfo2024}.
     \item G. G. Soares, E. Estrada. Navigational bottlenecks in nonconservative diffusion dynamics on networks. \textit{AIMS Mathematics} 9(9) (2024) 24297--24325 \cite{soares2024}.
 \end{enumerate}
 
