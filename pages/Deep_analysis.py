@@ -17,8 +17,9 @@ if not deep_analysis_enabled():
     # Belt and braces: the router doesn't register this page on hosted
     # deployments, but stop hard in case it is ever reached anyway.
     st.error("Deep Analysis is disabled on this hosted deployment — its computations are too "
-             "heavy for a shared server. Install StreetNets locally (`pip install streetnets`) "
-             "to use it on your own machine.")
+             "heavy for a shared server. Install StreetNets locally with "
+             "`pip install git+https://github.com/gioguarnieri/Streetnets.git` and run "
+             "`streetnets` to use it on your own machine.")
     st.stop()
 
 DB_AREA_M2 = float((2 * 4000) ** 2)  # 8x8 km, the database convention

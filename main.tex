@@ -62,7 +62,7 @@ C5 & Code versioning system used & git \\
 \hline
 C6 & Software code languages, tools, and services used & Python; Streamlit, OSMnx, NetworkX, python-igraph, GeoPandas, Shapely, Folium, Plotly, Matplotlib; OpenStreetMap Overpass and Nominatim web services \\
 \hline
-C7 & Compilation requirements, operating environments \& dependencies & Python $\geq$ 3.10, any OS. Install with \texttt{pip install .} from the repository (dependencies declared in \texttt{pyproject.toml} and \texttt{requirements.txt}); launch with the \texttt{streetnets} command. \\
+C7 & Compilation requirements, operating environments \& dependencies & Python $\geq$ 3.10, any OS. Install with \texttt{pip install} \url{git+https://github.com/gioguarnieri/Streetnets.git} (dependencies declared in \texttt{pyproject.toml}); launch with the \texttt{streetnets} command. \\
 \hline
 C8 & If available Link to developer documentation/manual & \footnotesize \url{https://github.com/gioguarnieri/Streetnets/blob/main/README.md} \\
 \hline
@@ -138,7 +138,7 @@ OSMnx is an established tool in urban analytics, widely adopted for producing to
 
 \section{Limitations and future improvements}
 
-Advanced metrics such as betweenness centrality and robustness curves scale poorly with network size, and real-time computation for large networks with tens of thousands of intersections is impractical on a shared web server. StreetNets addresses this by offering a local installation (\texttt{pip install .}, launched with the \texttt{streetnets} command), in which the Deep Analysis page runs on the user's own hardware; the hosted deployment provides retrieval, statistics, maps, export, and the City Database. Even locally, very large areas remain computationally expensive, and interactive maps are sampled above a feature limit to keep the interface responsive. Results also inherit the completeness and tagging quality of OSM, which varies between regions.
+Advanced metrics such as betweenness centrality and robustness curves scale poorly with network size, and real-time computation for large networks with tens of thousands of intersections is impractical on a shared web server. StreetNets addresses this by offering a local installation (installable with a single \texttt{pip} command, launched with the \texttt{streetnets} command), in which the Deep Analysis page runs on the user's own hardware; the hosted deployment provides retrieval, statistics, maps, export, and the City Database. Even locally, very large areas remain computationally expensive, and interactive maps are sampled above a feature limit to keep the interface responsive. Results also inherit the completeness and tagging quality of OSM, which varies between regions.
 
 Future work includes approximate centrality algorithms for very large networks, additional topological and accessibility metrics, expansion of the city database, and support for multimodal networks (e.g., combining street and public transport layers).
 

@@ -14,11 +14,11 @@ A no-code dashboard for retrieving, visualizing, and analyzing street networks f
 ### As a package (recommended for users)
 
 ```bash
-pip install .
+pip install git+https://github.com/gioguarnieri/Streetnets.git
 streetnets
 ```
 
-The `streetnets` command starts the app in your browser. On first use of the
+(From a local clone, `pip install .` does the same.) The `streetnets` command starts the app in your browser. On first use of the
 City Database, the pre-analyzed city data (~27 MB) is downloaded automatically
 into your user cache directory.
 
