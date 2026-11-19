@@ -1,0 +1,36 @@
+{
+  "title": "StreetNets: Democratizing Topological Analysis of Urban Street Networks",
+  "upload_type": "software",
+  "description": "StreetNets is a no-code dashboard built with Streamlit and OSMnx for retrieving, visualizing, analyzing, and exporting street networks from OpenStreetMap. It computes topological metrics, a functional road hierarchy (Highways, Arterial, Local), centrality, orientation, disruption and robustness analyses, and compares networks against a database of 18 pre-analyzed cities.",
+  "creators": [
+    {
+      "name": "Guarnieri Soares, Giovanni",
+      "affiliation": "National Institute for Space Research (INPE)"
+    },
+    {
+      "name": "Carvalho, Luiz Max",
+      "affiliation": "Getúlio Vargas Foundation (FGV)"
+    },
+    {
+      "name": "Santos, Leonardo Bacelar Lima",
+      "affiliation": "National Center for Monitoring and Early Warning of Natural Disasters (Cemaden)"
+    }
+  ],
+  "license": "MIT",
+  "keywords": [
+    "complex networks",
+    "OpenStreetMap",
+    "street networks",
+    "urban planning",
+    "GIS",
+    "OSMnx",
+    "Streamlit"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.3934/math.20241182",
+      "relation": "isSupplementTo",
+      "scheme": "doi"
+    }
+  ]
+}

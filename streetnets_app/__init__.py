@@ -1,3 +1,3 @@
 """StreetNets — no-code street network analysis on OpenStreetMap data."""
 
-__version__ = "0.1.0"
+__version__ = "1.1.0"
